@@ -18,11 +18,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Setting up YOURLS
 
-This is an [Ansible](https://www.ansible.com/) role which installs [YOURLS](https://github.com/YOURLS/YOURLS) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
+This is an [Ansible](https://www.ansible.com/) role which installs [YOURLS](https://yourls.org) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
-YOURLS is a fork of Mozilla's discontinued [Firefox YOURLS](https://github.com/mozilla/yourls) which allows you to yourls files to others with a link. Files are end-to-end encrypted so they cannot be read by the server, and also can be protected with a password.
+YOURLS is a set of PHP scripts that will allow you to run Your Own URL Shortener, on your server.
 
-See the project's [documentation](https://github.com/YOURLS/YOURLS/blob/master/README.md) to learn what YOURLS does and why it might be useful to you.
+See the project's [documentation](https://yourls.org/docs) to learn what YOURLS does and why it might be useful to you.
 
 ## Prerequisites
 
