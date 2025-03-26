@@ -7,16 +7,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-# Project source code URL: https://github.com/timvisee/send
+# Project source code URL: https://github.com/YOURLS/YOURLS
 
 send_enabled: true
 
 send_identifier: send
 send_base_path: "{{ send_identifier }}"
 
-# There are version tags, but use "latest" for now, as it contains some
-# fixes which are yet to be released for tagged images.
-send_version: latest
+send_version: 1.9.2
 
 send_uid: ''
 send_gid: ''
@@ -31,7 +29,7 @@ send_hostname: ''
 # technical limitations.
 send_path_prefix: /
 
-send_container_image: "{{ send_container_image_registry_prefix }}timvisee/send:{{ send_container_image_tag }}"
+send_container_image: "{{ send_container_image_registry_prefix }}yourls/yourls:{{ send_container_image_tag }}"
 send_container_image_tag: "{{ send_version }}"
 send_container_image_registry_prefix: "{{ send_container_image_registry_prefix_upstream }}"
 send_container_image_registry_prefix_upstream: "{{ send_container_image_registry_prefix_upstream_default }}"

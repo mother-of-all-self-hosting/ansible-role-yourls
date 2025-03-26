@@ -1,9 +1,9 @@
 galaxy_info:
   author: Suguru Hirahara
   company: progressiv
-  role_name: send
+  role_name: yourls
   namespace: progressiv
-  description: Send by Tim Visée
+  description: YOURLS
   platforms:
     - name: Debian
       versions:
