@@ -24,16 +24,13 @@ yourls_hostname: ''
 
 # The path at which YOURLS is exposed.
 # This value must either be `/` or not end with a slash (e.g. `/yourls`).
-#
-# Hosting YOURLS under a subpath does not seem to be possible due to YOURLS's
-# technical limitations.
 yourls_path_prefix: /
 
-yourls_container_image: "{{ yourls_container_image_registry_prefix }}yourls/yourls:{{ yourls_container_image_tag }}"
+yourls_container_image: "{{ yourls_container_image_registry_prefix }}yourls:{{ yourls_container_image_tag }}"
 yourls_container_image_tag: "{{ yourls_version }}"
 yourls_container_image_registry_prefix: "{{ yourls_container_image_registry_prefix_upstream }}"
 yourls_container_image_registry_prefix_upstream: "{{ yourls_container_image_registry_prefix_upstream_default }}"
-yourls_container_image_registry_prefix_upstream_default: registry.gitlab.com/
+yourls_container_image_registry_prefix_upstream_default: docker.io/
 yourls_container_image_force_pull: "{{ yourls_container_image.endswith(':latest') }}"
 
 # Controls whether the container exposes its HTTP port (tcp/80 in the container).
@@ -43,6 +40,9 @@ yourls_container_http_host_bind_port: ''
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 yourls_container_network: "{{ yourls_identifier }}"
+
+# The port number in the container
+yourls_container_http_port: 80
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
@@ -154,12 +154,6 @@ yourls_systemd_required_services_list_custom: []
 
 # List of systemd services that the YOURLS systemd service wants
 yourls_systemd_wanted_services_list: []
-
-# Control storage backend options
-# Also see: https://github.com/timvisee/yourls/blob/master/docs/docker.md#storage-backend-options
-#
-# Valid values: localsystem (default), s3compatible, gcs
-yourls_storage_backend_option: localsystem
 
 # env.j2: General configuration
 yourls_environment_variable_user: ''
