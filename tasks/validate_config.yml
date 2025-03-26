@@ -16,6 +16,8 @@
     - yourls_hostname
     - yourls_path_prefix
     - yourls_container_network
+    - yourls_environment_variable_user
+    - yourls_environment_variable_pass
     - yourls_environment_variable_cookiekey
 
 - when: yourls_container_labels_traefik_enabled | bool
