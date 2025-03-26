@@ -26,9 +26,11 @@ See the project's [documentation](https://yourls.org/docs) to learn what YOURLS 
 
 ## Prerequisites
 
-To run a YOURLS instance it is necessary to prepare a [Redis](https://redis.io/) server for managing a metadata database.
+To run a YOURLS instance it is necessary to prepare a [MySQL](https://www.mysql.com/) compatible database server.
 
-If you are looking for an Ansible role for Redis, you can check out [this role (ansible-role-redis)](https://github.com/mother-of-all-self-hosting/ansible-role-redis) maintained by the [Mother-of-All-Self-Hosting (MASH)](https://github.com/mother-of-all-self-hosting) team. Note that the team recommends to have a look at [this role (ansible-role-valkey)](https://github.com/mother-of-all-self-hosting/ansible-role-valkey) for [Valkey](https://valkey.io/) instead.
+If you are looking for an Ansible role for [MariaDB](https://mariadb.org/), you can check out [this role (ansible-role-mariadb)](https://github.com/mother-of-all-self-hosting/ansible-role-mariadb) maintained by the [Mother-of-All-Self-Hosting (MASH)](https://github.com/mother-of-all-self-hosting) team.
+
+See [here](https://yourls.org/docs#server-requirements) on the official documentation to check server requirements.
 
 ## Adjusting the playbook configuration
 
