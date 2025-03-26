@@ -6,21 +6,21 @@
 ---
 
 - block:
-    - when: send_enabled | bool
+    - when: yourls_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
 
-    - when: send_enabled | bool
+    - when: yourls_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
 
   tags:
     - setup-all
-    - setup-send
+    - setup-yourls
     - install-all
-    - install-send
+    - install-yourls
 
 - block:
-    - when: not send_enabled | bool
+    - when: not yourls_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
   tags:
     - setup-all
-    - setup-send
+    - setup-yourls
