@@ -41,7 +41,7 @@ To enable YOURLS with this role, add the following configuration to your `vars.y
 ```yaml
 ########################################################################
 #                                                                      #
-# yourls                                                                 #
+# yourls                                                               #
 #                                                                      #
 ########################################################################
 
@@ -49,14 +49,14 @@ yourls_enabled: true
 
 ########################################################################
 #                                                                      #
-# yourls                                                                 #
+# yourls                                                               #
 #                                                                      #
 ########################################################################
 ```
 
 ### Set the hostname
 
-To enable the YOURLS you need to set the hostname as well. To do so, add the following configuration to your `vars.yml` file. Make sure to replace `example.com` with your own value.
+To enable YOURLS you need to set the hostname as well. To do so, add the following configuration to your `vars.yml` file. Make sure to replace `example.com` with your own value.
 
 ```yaml
 yourls_hostname: "example.com"
@@ -65,6 +65,15 @@ yourls_hostname: "example.com"
 After adjusting the hostname, make sure to adjust your DNS records to point the domain to your server.
 
 **Note**: hosting YOURLS under a subpath (by configuring the `yourls_path_prefix` variable) does not seem to be possible due to YOURLS's technical limitations.
+
+### Set the admin username and password
+
+You also need to create an instance's user to access to the admin UI after installation. To create one, add the following configuration to your `vars.yml` file. Make sure to replace `YOUR_ADMIN_USERNAME_HERE` and `YOUR_ADMIN_PASSWORD_HERE`.
+
+```yaml
+yourls_environment_variable_user: YOUR_ADMIN_USERNAME_HERE
+yourls_environment_variable_pass: YOUR_ADMIN_PASSWORD_HERE
+```
 
 ### Set variables for connecting to a Redis server
 
