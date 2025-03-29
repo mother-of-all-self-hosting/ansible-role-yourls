@@ -14,6 +14,7 @@ yourls_enabled: true
 yourls_identifier: yourls
 yourls_base_path: "{{ yourls_identifier }}"
 
+# renovate: datasource=docker depName=yourls versioning=semver
 yourls_version: 1.9.2
 
 yourls_uid: ''
