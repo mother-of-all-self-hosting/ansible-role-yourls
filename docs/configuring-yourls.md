@@ -97,11 +97,11 @@ If you use the MASH playbook, the shortcut commands with the [`just` program](ht
 
 ## Usage
 
-After running the command for installation, YOURLS's admin UI is available at the specified hostname with `/admin/` such as `https://example.com/admin/`.
+After running the command for installation, YOURLS's admin UI is available at the specified hostname with `/admin/` such as `example.com/admin/`.
 
 First, open the page with a web browser to complete installation on the server by clicking "Install YOURLS" button. After that, click the anchor link "YOURLS Administration Page" to log in with the username (`yourls_environment_variable_user`) and password (`yourls_environment_variable_pass`).
 
-The help file is available at https://example.com/readme.html.
+The help file is available at `example.com/readme.html`.
 
 ## Troubleshooting
 
