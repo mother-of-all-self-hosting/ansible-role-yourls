@@ -129,3 +129,11 @@ The help file is available at `example.com/readme.html`.
 ### Check the service's logs
 
 You can find the logs in [systemd-journald](https://www.freedesktop.org/software/systemd/man/systemd-journald.service.html) by logging in to the server with SSH and running `journalctl -fu yourls` (or how you/your playbook named the service, e.g. `mash-yourls`).
+
+#### Enable debug mode
+
+If you want to enable debug mode, add the following configuration to your `vars.yml` file and re-run the playbook:
+
+```yaml
+yourls_environment_variable_debug: true
+```

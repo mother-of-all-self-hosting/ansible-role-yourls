@@ -189,6 +189,7 @@ yourls_environment_variable_url_convert: 36
 yourls_environment_variable_private_infos: true
 yourls_environment_variable_private_api: true
 yourls_environment_variable_nostats: false
+yourls_environment_variable_debug: false
 
 # Additional environment variables.
 # See: https://yourls.org/docs/guide/essentials/configuration#url-shortening-settings
