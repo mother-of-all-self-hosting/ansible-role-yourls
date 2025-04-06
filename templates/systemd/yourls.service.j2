@@ -44,6 +44,9 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {% endif %}
       --env-file={{ yourls_base_path }}/env \
       --label-file={{ yourls_base_path }}/labels \
+      {% for volume in yourls_container_additional_volumes %}
+      --mount type={{ volume.type | default('bind' if '/' in volume.src else 'volume') }},src={{ volume.src }},dst={{ volume.dst }}{{ (',' + volume.options) if volume.options else '' }} \
+      {% endfor %}
       {% for arg in yourls_container_extra_arguments %}
       {{ arg }} \
       {% endfor %}

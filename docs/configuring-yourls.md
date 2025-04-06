@@ -75,6 +75,27 @@ yourls_environment_variable_user: YOUR_ADMIN_USERNAME_HERE
 yourls_environment_variable_pass: YOUR_ADMIN_PASSWORD_HERE
 ```
 
+### Mount a directory for loading data (optional)
+
+By mounting a directory, it becomes possible to load plugins listed [here](https://github.com/YOURLS/awesome) with it.
+
+To add the volume for the plugin directory, prepare a local directory on the host machine and add the following configuration to your `vars.yml` file, setting the directory path to `src`:
+
+```yaml
+yourls_container_additional_volumes:
+  - type: bind
+    src: /path/on/the/host
+    dst: /var/www/html/user/plugins
+    options:
+```
+
+Make sure permissions and owner of the directory specified to `src` (the owner should be set to `www-data`).
+
+After mounting the volume, move/copy the plugin to the `src` directory.
+
+>[!NOTE]
+> The [official image](https://hub.docker.com/_/yourls) does not provide any additional PHP extensions or other libraries, even if they are required by popular plugins. There are an infinite number of possible plugins, and they potentially require extension PHP supports for it. If you need additional PHP extensions, you'll need to create your own image.
+
 ### Extending the configuration
 
 There are some additional things you may wish to configure about the component.
