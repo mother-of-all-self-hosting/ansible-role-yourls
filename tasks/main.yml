@@ -5,11 +5,14 @@
 
 ---
 
-- block:
-    - when: yourls_enabled | bool
+- name: Perform YOURLS installation tasks
+  block:
+    - name: Validate YOURLS configuration
+      when: yourls_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
 
-    - when: yourls_enabled | bool
+    - name: Install YOURLS
+      when: yourls_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
   tags:
     - setup-all
@@ -17,8 +20,10 @@
     - install-all
     - install-yourls
 
-- block:
-    - when: not yourls_enabled | bool
+- name: Perform YOURLS uninstallation tasks
+  block:
+    - name: Uninstall YOURLS
+      when: not yourls_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
   tags:
     - setup-all
