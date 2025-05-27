@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-
 - name: Fail if required YOURLS settings not defined
   ansible.builtin.fail:
     msg: >
@@ -20,7 +19,8 @@
     - yourls_environment_variable_pass
     - yourls_environment_variable_cookiekey
 
-- when: yourls_container_labels_traefik_enabled | bool
+- name: Run if Traefik is enabled
+  when: yourls_container_labels_traefik_enabled | bool
   block:
     - name: Fail if required YOURLS Traefik settings not defined
       ansible.builtin.fail:

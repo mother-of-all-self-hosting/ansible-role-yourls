@@ -30,7 +30,7 @@ To run a YOURLS instance it is necessary to prepare a [MySQL](https://www.mysql.
 
 If you are looking for an Ansible role for [MariaDB](https://mariadb.org/), you can check out [this role (ansible-role-mariadb)](https://github.com/mother-of-all-self-hosting/ansible-role-mariadb) maintained by the [Mother-of-All-Self-Hosting (MASH)](https://github.com/mother-of-all-self-hosting) team.
 
-See [here](https://yourls.org/docs#server-requirements) on the official documentation to check server requirements.
+See [this section](https://yourls.org/docs#server-requirements) on the official documentation to check server requirements.
 
 ## Adjusting the playbook configuration
 
@@ -77,7 +77,7 @@ yourls_environment_variable_pass: YOUR_ADMIN_PASSWORD_HERE
 
 ### Mount a directory for loading data (optional)
 
-By mounting a directory, it becomes possible to load plugins listed [here](https://github.com/YOURLS/awesome) with it.
+By mounting a directory, it becomes possible to load plugins listed [on this list](https://github.com/YOURLS/awesome) with it.
 
 To add the volume for the plugin directory, prepare a local directory on the host machine and add the following configuration to your `vars.yml` file, setting the directory path to `src`:
 

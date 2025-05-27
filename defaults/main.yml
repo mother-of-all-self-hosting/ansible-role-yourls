@@ -17,11 +17,11 @@ yourls_base_path: "/{{ yourls_identifier }}"
 # renovate: datasource=docker depName=yourls versioning=semver
 yourls_version: 1.10.1
 
-yourls_uid: ''
-yourls_gid: ''
+yourls_uid: ""
+yourls_gid: ""
 
 # The hostname at which YOURLS is served.
-yourls_hostname: ''
+yourls_hostname: ""
 
 # Specify URI scheme for yourls_environment_variable_site.
 yourls_scheme: https
@@ -40,7 +40,7 @@ yourls_container_image_force_pull: "{{ yourls_container_image.endswith(':latest'
 # Controls whether the container exposes its HTTP port (tcp/80 in the container).
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
-yourls_container_http_host_bind_port: ''
+yourls_container_http_host_bind_port: ""
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 yourls_container_network: "{{ yourls_identifier }}"
@@ -98,7 +98,7 @@ yourls_container_labels_traefik_additional_response_headers_custom: {}
 # yourls_container_labels_additional_labels: |
 #   my.label=1
 #   another.label="here"
-yourls_container_labels_additional_labels: ''
+yourls_container_labels_additional_labels: ""
 
 # A list of extra arguments to pass to the container (`docker run` command)
 yourls_container_extra_arguments: []
@@ -160,8 +160,8 @@ yourls_systemd_required_services_list_custom: []
 yourls_systemd_wanted_services_list: []
 
 # env.j2: General configuration
-yourls_environment_variable_user: ''
-yourls_environment_variable_pass: ''
+yourls_environment_variable_user: ""
+yourls_environment_variable_pass: ""
 
 # env.j2: MySQL settings
 #
@@ -178,7 +178,7 @@ yourls_environment_variable_db_prefix: yourls_
 yourls_environment_variable_site: "{{ yourls_scheme }}://{{ yourls_hostname }}"
 yourls_environment_variable_private: true
 yourls_environment_variable_unique_urls: true
-yourls_environment_variable_cookiekey: ''
+yourls_environment_variable_cookiekey: ""
 
 # env.j2: URL Shortening settings
 #
@@ -193,4 +193,4 @@ yourls_environment_variable_debug: false
 
 # Additional environment variables.
 # See: https://yourls.org/docs/guide/essentials/configuration#url-shortening-settings
-yourls_environment_variables_additional_variables: ''
+yourls_environment_variables_additional_variables: ""
