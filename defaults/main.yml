@@ -14,6 +14,7 @@ yourls_enabled: true
 yourls_identifier: yourls
 yourls_base_path: "/{{ yourls_identifier }}"
 
+# Note: Update "yourls_container_image_self_build_repo_version" when updating
 # renovate: datasource=docker depName=yourls versioning=semver
 yourls_version: 1.10.1
 
@@ -36,6 +37,12 @@ yourls_container_image_registry_prefix: "{{ yourls_container_image_registry_pref
 yourls_container_image_registry_prefix_upstream: "{{ yourls_container_image_registry_prefix_upstream_default }}"
 yourls_container_image_registry_prefix_upstream_default: docker.io/
 yourls_container_image_force_pull: "{{ yourls_container_image.endswith(':latest') }}"
+
+yourls_container_image_self_build: false
+yourls_container_image_self_build_name: "yourls/containers:{{ yourls_container_image_self_build_repo_version }}"
+yourls_container_image_self_build_repo: "https://github.com/YOURLS/containers.git"
+yourls_container_image_self_build_repo_version: "d306b06d6b3e94f1441c65385395f7a384a46101" # For 1.10.1
+yourls_container_image_self_build_src_files_path: "{{ yourls_base_path }}/docker-src"
 
 # Controls whether the container exposes its HTTP port (tcp/80 in the container).
 #

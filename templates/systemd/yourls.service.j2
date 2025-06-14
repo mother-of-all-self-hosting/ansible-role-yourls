@@ -49,7 +49,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {% for arg in yourls_container_extra_arguments %}
       {{ arg }} \
       {% endfor %}
-      {{ yourls_container_image }}
+      {{ yourls_container_image_self_build_name if yourls_container_image_self_build else yourls_container_image }}
 
 {% for network in yourls_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ yourls_identifier }}
