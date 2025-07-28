@@ -85,6 +85,12 @@ yourls_container_labels_traefik_entrypoints: web-secure
 yourls_container_labels_traefik_tls: "{{ yourls_container_labels_traefik_entrypoints != 'web' }}"
 yourls_container_labels_traefik_tls_certResolver: default  # noqa var-naming
 
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `yourls_container_labels_traefik_additional_request_headers_custom`
+yourls_container_labels_traefik_additional_request_headers: "{{ yourls_container_labels_traefik_additional_request_headers_auto | combine(yourls_container_labels_traefik_additional_request_headers_custom) }}"
+yourls_container_labels_traefik_additional_request_headers_auto: {}
+yourls_container_labels_traefik_additional_request_headers_custom: {}
+
 # Controls which additional headers to attach to all HTTP responses.
 # To add your own custom response headers, use `yourls_container_labels_traefik_additional_response_headers_custom`
 yourls_container_labels_traefik_additional_response_headers: "{{ yourls_container_labels_traefik_additional_response_headers_auto | combine(yourls_container_labels_traefik_additional_response_headers_custom) }}"
