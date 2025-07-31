@@ -82,7 +82,7 @@ By mounting a directory, it becomes possible to load plugins listed [on this lis
 To add the volume for the plugin directory, prepare a local directory on the host machine and add the following configuration to your `vars.yml` file, setting the directory path to `src`:
 
 ```yaml
-yourls_container_additional_volumes:
+yourls_container_additional_volumes_custom:
   - type: bind
     src: /path/on/the/host
     dst: /var/www/html/user/plugins
