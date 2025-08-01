@@ -54,7 +54,7 @@ yourls_container_http_host_bind_port: ""
 yourls_container_network: "{{ yourls_identifier }}"
 
 # The port number in the container
-yourls_container_http_port: 80
+yourls_container_http_port: 8080
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
