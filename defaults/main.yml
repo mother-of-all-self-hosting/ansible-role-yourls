@@ -41,7 +41,7 @@ yourls_container_image_force_pull: "{{ yourls_container_image.endswith(':latest'
 yourls_container_image_self_build: false
 yourls_container_image_self_build_name: "yourls/containers:{{ yourls_container_image_self_build_repo_version }}"
 yourls_container_image_self_build_repo: "https://github.com/YOURLS/containers.git"
-yourls_container_image_self_build_repo_version: "d306b06d6b3e94f1441c65385395f7a384a46101" # For 1.10.1
+yourls_container_image_self_build_repo_version: "0fb10e711e23c63c34c3613b82cd915b07782d80" # For 1.10.2
 yourls_container_image_self_build_repo_base: "apache"
 yourls_container_image_self_build_src_files_path: "{{ yourls_base_path }}/docker-src"
 
