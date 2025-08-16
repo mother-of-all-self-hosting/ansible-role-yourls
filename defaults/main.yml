@@ -186,7 +186,7 @@ yourls_environment_variable_db_user: joe
 yourls_environment_variable_db_pass: MySeCreTPaSsW0rd
 yourls_environment_variable_db_name: yourls
 yourls_environment_variable_db_hostname: localhost
-yourls_environment_variable_db_host_port: 3306
+yourls_environment_variable_db_port: 3306
 yourls_environment_variable_db_prefix: yourls_
 
 # env.j2: Site options

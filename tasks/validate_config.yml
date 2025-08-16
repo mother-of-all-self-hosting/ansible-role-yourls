@@ -12,6 +12,7 @@
   when: "lookup('ansible.builtin.varnames', ('^' + item.old + '$'), wantlist=True) | length > 0"
   with_items:
     - { "old": "yourls_environment_variable_db_host_name", "new": "yourls_environment_variable_db_hostname" }
+    - { "old": "yourls_environment_variable_db_host_port", "new": "yourls_environment_variable_db_port" }
 
 - name: Fail if required YOURLS settings not defined
   ansible.builtin.fail:
