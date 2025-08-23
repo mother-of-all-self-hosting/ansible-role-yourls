@@ -173,7 +173,10 @@ yourls_systemd_required_services_list_auto: []
 yourls_systemd_required_services_list_custom: []
 
 # List of systemd services that the YOURLS systemd service wants
-yourls_systemd_wanted_services_list: []
+yourls_systemd_wanted_services_list: "{{ yourls_systemd_wanted_services_list_default + yourls_systemd_wanted_services_list_auto + yourls_systemd_wanted_services_list_custom }}"
+yourls_systemd_wanted_services_list_default: []
+yourls_systemd_wanted_services_list_auto: []
+yourls_systemd_wanted_services_list_custom: []
 
 # env.j2: General configuration
 yourls_environment_variable_user: ""
