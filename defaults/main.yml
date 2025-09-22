@@ -185,12 +185,12 @@ yourls_environment_variable_pass: ""
 # env.j2: MySQL settings
 #
 # MySQL settings
-yourls_environment_variable_db_user: joe
-yourls_environment_variable_db_pass: MySeCreTPaSsW0rd
-yourls_environment_variable_db_name: yourls
-yourls_environment_variable_db_hostname: localhost
-yourls_environment_variable_db_port: 3306
-yourls_environment_variable_db_prefix: yourls_
+yourls_database_hostname: ""
+yourls_database_port: 3306
+yourls_database_username: ""
+yourls_database_password: ""
+yourls_database_name: yourls
+yourls_database_prefix: yourls_
 
 # env.j2: Site options
 #

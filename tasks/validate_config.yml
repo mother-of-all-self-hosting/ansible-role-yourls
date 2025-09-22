@@ -11,8 +11,10 @@
       Please change your configuration to rename the variable (`{{ item.old }}` -> `{{ item.new }}`).
   when: "lookup('ansible.builtin.varnames', ('^' + item.old + '$'), wantlist=True) | length > 0"
   with_items:
-    - { "old": "yourls_environment_variable_db_host_name", "new": "yourls_environment_variable_db_hostname" }
-    - { "old": "yourls_environment_variable_db_host_port", "new": "yourls_environment_variable_db_port" }
+    - { "old": "yourls_environment_variable_db_hostname", "new": "yourls_database_hostname" }
+    - { "old": "yourls_environment_variable_db_port", "new": "yourls_database_port" }
+    - { "old": "yourls_environment_variable_db_user", "new": "yourls_database_username" }
+    - { "old": "yourls_environment_variable_db_pass", "new": "yourls_database_password" }
     - { "old": "yourls_http_header_content_permission_policy", "new": "yourls_http_header_permissions_policy" }
 
 - name: Fail if required YOURLS settings not defined
@@ -28,6 +30,7 @@
     - yourls_container_network
     - yourls_environment_variable_user
     - yourls_environment_variable_pass
+    - yourls_database_hostname
     - yourls_environment_variable_cookiekey
 
 - name: Run if Traefik is enabled
