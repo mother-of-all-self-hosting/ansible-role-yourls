@@ -28,9 +28,10 @@
     - yourls_hostname
     - yourls_path_prefix
     - yourls_container_network
+    - yourls_database_hostname
+    - yourls_database_password
     - yourls_environment_variable_user
     - yourls_environment_variable_pass
-    - yourls_database_hostname
     - yourls_environment_variable_cookiekey
 
 - name: Run if Traefik is enabled

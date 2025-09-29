@@ -187,7 +187,7 @@ yourls_environment_variable_pass: ""
 # MySQL settings
 yourls_database_hostname: ""
 yourls_database_port: 3306
-yourls_database_username: ""
+yourls_database_username: yourls
 yourls_database_password: ""
 yourls_database_name: yourls
 yourls_database_prefix: yourls_
