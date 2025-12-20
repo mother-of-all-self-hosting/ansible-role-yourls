@@ -178,6 +178,9 @@ yourls_systemd_wanted_services_list_default: []
 yourls_systemd_wanted_services_list_auto: []
 yourls_systemd_wanted_services_list_custom: []
 
+# Specify the timezone
+yourls_environment_variables_tz: UTC
+
 # env.j2: General configuration
 yourls_environment_variable_user: ""
 yourls_environment_variable_pass: ""
