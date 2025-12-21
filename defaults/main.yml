@@ -27,7 +27,7 @@ yourls_hostname: ""
 # Specify URI scheme for yourls_environment_variable_site.
 yourls_scheme: https
 
-# The path at which YOURLS is exposed.
+# The path at which YOURLS is served.
 # This value must either be `/` or not end with a slash (e.g. `/yourls`).
 yourls_path_prefix: /
 
