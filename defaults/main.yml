@@ -119,7 +119,7 @@ yourls_container_labels_additional_labels: "{{ yourls_container_labels_additiona
 yourls_container_labels_additional_labels_auto: {}
 yourls_container_labels_additional_labels_custom: {}
 
-# A list of extra arguments to pass to the container (`docker run` command)
+# A list of extra arguments to pass to the container (`docker create` command)
 yourls_container_extra_arguments: "{{ yourls_container_extra_arguments_auto + yourls_container_extra_arguments_custom }}"
 yourls_container_extra_arguments_auto: []
 yourls_container_extra_arguments_custom: []
