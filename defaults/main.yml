@@ -16,7 +16,7 @@ yourls_base_path: "/{{ yourls_identifier }}"
 
 # Note: Update "yourls_container_image_self_build_repo_version" when updating
 # renovate: datasource=docker depName=yourls versioning=semver
-yourls_version: 1.10.2
+yourls_version: 1.10.3
 
 yourls_uid: ""
 yourls_gid: ""
@@ -41,7 +41,7 @@ yourls_container_image_force_pull: "{{ yourls_container_image.endswith(':latest'
 yourls_container_image_self_build: false
 yourls_container_image_self_build_name: "yourls/containers:{{ yourls_container_image_self_build_repo_version }}"
 yourls_container_image_self_build_repo: "https://github.com/YOURLS/containers.git"
-yourls_container_image_self_build_repo_version: "0fb10e711e23c63c34c3613b82cd915b07782d80" # For 1.10.2
+yourls_container_image_self_build_repo_version: "ceaf09af9f84ab8d7a07462a9bd63fc0b3eda5d6" # For 1.10.3
 yourls_container_image_self_build_repo_base: "apache"
 yourls_container_image_self_build_src_files_path: "{{ yourls_base_path }}/docker-src"
 
