@@ -21,11 +21,11 @@ yourls_version: 1.10.3
 yourls_uid: ""
 yourls_gid: ""
 
+# The scheme used for serving YOURLS.
+yourls_scheme: https
+
 # The hostname at which YOURLS is served.
 yourls_hostname: ""
-
-# Specify URI scheme for yourls_environment_variable_site.
-yourls_scheme: https
 
 # The path at which YOURLS is served.
 # This value must either be `/` or not end with a slash (e.g. `/yourls`).
@@ -45,7 +45,7 @@ yourls_container_image_self_build_repo_version: "ceaf09af9f84ab8d7a07462a9bd63fc
 yourls_container_image_self_build_repo_base: "apache"
 yourls_container_image_self_build_src_files_path: "{{ yourls_base_path }}/docker-src"
 
-# Controls whether the container exposes its HTTP port (tcp/80 in the container).
+# Controls whether the container exposes its HTTP port (tcp/8080 in the container).
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
 yourls_container_http_host_bind_port: ""
