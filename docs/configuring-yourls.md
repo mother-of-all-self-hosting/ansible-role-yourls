@@ -98,7 +98,7 @@ After mounting the volume, move/copy the plugin to the `src` directory.
 
 ### Extending the configuration
 
-There are some additional things you may wish to configure about the component.
+There are some additional things you may wish to configure about the service.
 
 Take a look at:
 
