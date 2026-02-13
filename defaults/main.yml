@@ -221,3 +221,13 @@ yourls_environment_variable_debug: false
 # Additional environment variables.
 # See: https://yourls.org/docs/guide/essentials/configuration#url-shortening-settings
 yourls_environment_variables_additional_variables: ""
+
+# yourls_restart_necessary controls whether the YOURLS systemd
+# service will be restarted (when true) or merely started (when false) by the
+# systemd service manager role (when conditional restart is enabled).
+#
+# This value is automatically computed during installation based on whether
+# any configuration files, the systemd service file, or the container image changed.
+# The default of `false` means "no restart needed" — appropriate when the role's
+# installation tasks haven't run (e.g., due to --tags skipping them).
+yourls_restart_necessary: false
