@@ -24,21 +24,24 @@
         path: "{{ devture_systemd_docker_base_systemd_path }}/{{ yourls_identifier }}.service"
         state: absent
 
-    - name: Ensure YOURLS container network does not exist via community.docker.docker_network
-      when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
-      community.docker.docker_network:
-        name: "{{ yourls_container_network }}"
-        state: absent
-      register: yourls_network_deletion_result
+    - name: Ensure YOURLS container network does not exist
+      when: yourls_container_network_deletion_enabled
+      block:
+        - name: Ensure YOURLS container network does not exist via community.docker.docker_network
+          when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
+          community.docker.docker_network:
+            name: "{{ yourls_container_network }}"
+            state: absent
+          register: yourls_network_deletion_result
 
-    - name: Ensure YOURLS container network does not exist via ansible.builtin.command
-      when: devture_systemd_docker_base_container_network_creation_method == 'command'
-      ansible.builtin.command:
-        cmd: >-
-          {{ devture_systemd_docker_base_host_command_docker }} network rm
-          {{ yourls_container_network }}
-      register: yourls_network_deletion_result
-      changed_when: yourls_container_network in yourls_network_deletion_result.stdout
+        - name: Ensure YOURLS container network does not exist via ansible.builtin.command
+          when: devture_systemd_docker_base_container_network_creation_method == 'command'
+          ansible.builtin.command:
+            cmd: >-
+              {{ devture_systemd_docker_base_host_command_docker }} network rm
+              {{ yourls_container_network }}
+          register: yourls_network_deletion_result
+          changed_when: yourls_container_network in yourls_network_deletion_result.stdout
 
     - name: Ensure YOURLS path does not exist
       ansible.builtin.file:
