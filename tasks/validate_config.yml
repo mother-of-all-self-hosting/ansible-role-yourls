@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Slavi Pantaleev
-# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -21,18 +21,19 @@
   ansible.builtin.fail:
     msg: >-
       You need to define a required configuration setting (`{{ item }}`).
-  when: "lookup('vars', item, default='') | string | length == 0"
+  when: "item.when | bool and lookup('vars', item.name, default='') | string | length == 0"
   with_items:
-    - yourls_uid
-    - yourls_gid
-    - yourls_hostname
-    - yourls_path_prefix
-    - yourls_container_network
-    - yourls_database_hostname
-    - yourls_database_password
-    - yourls_environment_variable_user
-    - yourls_environment_variable_pass
-    - yourls_environment_variable_cookiekey
+    - { "name": "yourls_uid", when: true }
+    - { "name": "yourls_gid", when: true }
+    - { "name": "yourls_hostname", when: true }
+    - { "name": "yourls_path_prefix", when: true }
+    - { "name": "yourls_container_network", when: true }
+    - { "name": "yourls_database_hostname", when: "{{ not yourls_database_socket_enabled }}" }
+    - { "name": "yourls_database_password", when: true }
+    - { "name": "yourls_database_socket_path_host", when: "{{ yourls_database_socket_enabled }}" }
+    - { "name": "yourls_environment_variable_user", when: true }
+    - { "name": "yourls_environment_variable_pass", when: true }
+    - { "name": "yourls_environment_variable_cookiekey", when: true }
 
 - name: Run if Traefik is enabled
   when: yourls_container_labels_traefik_enabled | bool

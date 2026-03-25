@@ -1,17 +1,19 @@
 <!--
-SPDX-FileCopyrightText: 2020 - 2024 MDAD project contributors
-SPDX-FileCopyrightText: 2020 - 2024 Slavi Pantaleev
 SPDX-FileCopyrightText: 2020 Aaron Raimist
 SPDX-FileCopyrightText: 2020 Chris van Dijk
 SPDX-FileCopyrightText: 2020 Dominik Zajac
 SPDX-FileCopyrightText: 2020 Mickaël Cornière
+SPDX-FileCopyrightText: 2020-2024 MDAD project contributors
+SPDX-FileCopyrightText: 2020-2024 Slavi Pantaleev
 SPDX-FileCopyrightText: 2022 François Darveau
 SPDX-FileCopyrightText: 2022 Julian Foad
 SPDX-FileCopyrightText: 2022 Warren Bailey
 SPDX-FileCopyrightText: 2023 Antonis Christofides
 SPDX-FileCopyrightText: 2023 Felix Stupp
+SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
 SPDX-FileCopyrightText: 2023 Pierre 'McFly' Marty
-SPDX-FileCopyrightText: 2024 - 2025 Suguru Hirahara
+SPDX-FileCopyrightText: 2024 Thomas Miceli
+SPDX-FileCopyrightText: 2024-2026 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
@@ -73,6 +75,36 @@ You also need to create an instance's user to access to the admin UI after insta
 ```yaml
 yourls_environment_variable_user: YOUR_ADMIN_USERNAME_HERE
 yourls_environment_variable_pass: YOUR_ADMIN_PASSWORD_HERE
+```
+
+### Set variables for connecting to a MySQL-compatible database server
+
+To have the YOURLS instance connect to your MySQL-compatible database server, add the following configuration to your `vars.yml` file.
+
+```yaml
+yourls_database_username: YOUR_MYSQL_SERVER_USERNAME_HERE
+yourls_database_password: YOUR_MYSQL_SERVER_PASSWORD_HERE
+yourls_database_name: YOUR_MYSQL_SERVER_DATABASE_NAME_HERE
+```
+
+### Configuring connection to the database server (optional)
+
+By default the role is configured to establish connection with the the database server via the Unix socket. You can mount the Unix socket by adding the following configuration to your `vars.yml` file:
+
+```yaml
+# Specify the path to the the database Unix socket path on the host (bind-mount source)
+yourls_database_socket_path_host: ""
+```
+
+Setting it enables to connect to the the database server via Unix socket mounted in the container at `/run-mysqld/mysqld.sock`.
+
+If TCP connection is preferred, connection via the Unix socket can be disabled by adding the following configuration to your `vars.yml` file:
+
+```yaml
+# Disable the connection to the database server via a Unix socket
+yourls_database_socket_enabled: false
+
+yourls_database_hostname: YOUR_MYSQL_SERVER_HOSTNAME_HERE
 ```
 
 ### Mount a directory for loading data (optional)

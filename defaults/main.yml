@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2023 - 2024 Nikita Chernyi
-# SPDX-FileCopyrightText: 2023 - 2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2023, 2024 Nikita Chernyi
+# SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
 # SPDX-FileCopyrightText: 2025 MASH project contributors
-# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -217,15 +217,38 @@ yourls_container_cleanup_command: |
   echo "Failed to remove stale container {{ yourls_identifier }} after {{ yourls_container_cleanup_timeout_seconds }} attempts" >&2;
   exit 1
 
-# env.j2: MySQL settings
-#
-# MySQL settings
+########################################################################
+#                                                                      #
+# database                                                             #
+#                                                                      #
+########################################################################
+
+# Specify database configuration
 yourls_database_hostname: ""
 yourls_database_port: 3306
 yourls_database_username: yourls
 yourls_database_password: ""
 yourls_database_name: yourls
 yourls_database_prefix: yourls_
+
+# Control if the database connection to MySQL is made via a Unix socket
+yourls_database_socket_enabled: true
+
+# Specify the path to the MySQL Unix socket path inside the YOURLS container
+yourls_database_socket_path_container: /run-mysqld
+
+# Specify the path to the MySQL Unix socket path on the host (bind-mount source)
+yourls_database_socket_path_host: ""
+
+# Specify database host address and port or absolute path for Unix socket
+# cf. https://github.com/YOURLS/YOURLS/issues/1589
+yourls_environment_variable_db_host: "{{ 'localhost;unix_socket=' + yourls_database_socket_path_container + '/mysqld.sock' if yourls_database_socket_enabled else yourls_database_hostname + ':' + yourls_database_port }}"
+
+########################################################################
+#                                                                      #
+# /database                                                            #
+#                                                                      #
+########################################################################
 
 # Specify the timezone
 yourls_environment_variables_tz: UTC
