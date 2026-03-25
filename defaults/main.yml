@@ -241,7 +241,7 @@ yourls_database_socket_path_container: /run-mysqld
 yourls_database_socket_path_host: ""
 
 # Specify database host address and port or absolute path for Unix socket
-# cf. https://github.com/YOURLS/YOURLS/issues/1589
+# Note that YOURLS uses PDO; cf. https://github.com/YOURLS/YOURLS/issues/1589
 yourls_environment_variable_db_host: "{{ 'localhost;unix_socket=' + yourls_database_socket_path_container + '/mysqld.sock' if yourls_database_socket_enabled else yourls_database_hostname + ':' + yourls_database_port }}"
 
 ########################################################################
