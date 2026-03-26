@@ -42,7 +42,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {% endif %}
       --env-file={{ yourls_base_path }}/env \
       --label-file={{ yourls_base_path }}/labels \
-      {% if yourls_database_socket_enabled %}
+      {% if yourls_database_socket_enabled and yourls_database_socket_path_host != '' %}
       --mount type=bind,src={{ yourls_database_socket_path_host }},dst={{ yourls_database_socket_path_container }} \
       {% endif %}
       {% for volume in yourls_container_additional_volumes %}
