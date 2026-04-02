@@ -77,7 +77,9 @@ yourls_environment_variable_user: YOUR_ADMIN_USERNAME_HERE
 yourls_environment_variable_pass: YOUR_ADMIN_PASSWORD_HERE
 ```
 
-### Set variables for connecting to a MySQL-compatible database server
+### Configuring database
+
+#### Set variables for the database server
 
 To have the YOURLS instance connect to your MySQL-compatible database server, add the following configuration to your `vars.yml` file.
 
@@ -87,7 +89,7 @@ yourls_database_password: YOUR_MYSQL_SERVER_PASSWORD_HERE
 yourls_database_name: YOUR_MYSQL_SERVER_DATABASE_NAME_HERE
 ```
 
-### Configuring connection to the database server (optional)
+#### Configuring connection to the database server (optional)
 
 By default the role is configured to establish connection with the the database server via the Unix socket. You can mount the Unix socket by adding the following configuration to your `vars.yml` file:
 
