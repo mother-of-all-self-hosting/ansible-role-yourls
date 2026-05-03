@@ -28,6 +28,7 @@
     - { "name": "yourls_hostname", when: true }
     - { "name": "yourls_path_prefix", when: true }
     - { "name": "yourls_container_network", when: true }
+    - { "name": "yourls_container_labels_traefik_middleware_basic_auth_users", when: "{{ yourls_container_labels_traefik_middleware_basic_auth_enabled }}" }
     - { "name": "yourls_database_hostname", when: "{{ not yourls_database_socket_enabled }}" }
     - { "name": "yourls_database_password", when: true }
     - { "name": "yourls_database_socket_path_host", when: "{{ yourls_database_socket_enabled }}" }
