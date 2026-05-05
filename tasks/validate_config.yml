@@ -16,6 +16,7 @@
     - { "old": "yourls_environment_variable_db_user", "new": "yourls_database_username" }
     - { "old": "yourls_environment_variable_db_pass", "new": "yourls_database_password" }
     - { "old": "yourls_http_header_content_permission_policy", "new": "yourls_http_header_permissions_policy" }
+    - { "old": "yourls_container_image_force_pull", "new": "<removed> (the new community.docker.docker_image_pull module handles this natively)" }
 
 - name: Fail if required YOURLS settings not defined
   ansible.builtin.fail:

@@ -36,7 +36,6 @@ yourls_container_image_tag: "{{ yourls_version }}"
 yourls_container_image_registry_prefix: "{{ yourls_container_image_registry_prefix_upstream }}"
 yourls_container_image_registry_prefix_upstream: "{{ yourls_container_image_registry_prefix_upstream_default }}"
 yourls_container_image_registry_prefix_upstream_default: docker.io/
-yourls_container_image_force_pull: "{{ yourls_container_image.endswith(':latest') }}"
 
 yourls_container_image_self_build: false
 yourls_container_image_self_build_name: "yourls/containers:{{ yourls_container_image_self_build_repo_version }}"
