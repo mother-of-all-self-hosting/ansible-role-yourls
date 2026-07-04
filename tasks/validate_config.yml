@@ -29,7 +29,6 @@
     - { "name": "yourls_hostname", when: true }
     - { "name": "yourls_path_prefix", when: true }
     - { "name": "yourls_container_network", when: true }
-    - { "name": "yourls_container_labels_traefik_middleware_basic_auth_users", when: "{{ yourls_container_labels_traefik_middleware_basic_auth_enabled }}" }
     - { "name": "yourls_database_hostname", when: "{{ not yourls_database_socket_enabled }}" }
     - { "name": "yourls_database_password", when: true }
     - { "name": "yourls_database_socket_path_host", when: "{{ yourls_database_socket_enabled }}" }
@@ -43,11 +42,12 @@
     - name: Fail if Traefik settings required for YOURLS are not defined
       ansible.builtin.fail:
         msg: >-
-          You need to define a required configuration setting (`{{ item }}`).
-      when: "lookup('vars', item, default='') | string | length == 0"
+          You need to define a required configuration setting (`{{ item.name }}`).
+      when: "item.when | bool and lookup('vars', item.name, default='') | string | length == 0"
       with_items:
-        - yourls_container_labels_traefik_hostname
-        - yourls_container_labels_traefik_path_prefix
+        - { "name": "yourls_container_labels_traefik_hostname", when: true }
+        - { "name": "yourls_container_labels_traefik_path_prefix", when: true }
+        - { "name": "yourls_container_labels_traefik_middleware_basic_auth_users", when: "{{ yourls_container_labels_traefik_middleware_basic_auth_enabled }}" }
 
     - name: Fail if yourls_container_labels_traefik_path_prefix is different than /
       ansible.builtin.fail:
