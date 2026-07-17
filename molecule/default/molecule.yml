@@ -33,7 +33,8 @@ provisioner:
         # Variables for YOURLS
         yourls_uid: 1000
         yourls_gid: 1000
-        yourls_hostname: yourls
+        yourls_scheme: http
+        yourls_hostname: localhost
         yourls_container_labels_traefik_enabled: false
         yourls_container_http_host_bind_port: 8080
         yourls_environment_variable_user: user
