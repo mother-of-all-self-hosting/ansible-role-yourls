@@ -23,6 +23,12 @@
         fail_msg: "yourls.service not active ({{ yourls_service.status.ActiveState }})"
         success_msg: "yourls.service is active"
 
+    - name: Retrieve YOURLS service log for debugging
+      when: yourls_debug_service_enabled | bool
+      ansible.builtin.command:
+        cmd: journalctl -xeu yourls.service
+      changed_when: false
+
     - name: Wait for YOURLS HTTP endpoint to respond (up to 10m)
       ansible.builtin.uri:
         url: "http://localhost:8080/admin/install.php"

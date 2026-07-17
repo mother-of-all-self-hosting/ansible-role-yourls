@@ -27,6 +27,9 @@ provisioner:
   inventory:
     group_vars:
       all:
+        # Helper variables
+        yourls_debug_service_enabled: false
+
         # Variables for YOURLS
         yourls_uid: 1000
         yourls_gid: 1000
