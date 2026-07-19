@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: yourls-${MOLECULE_DISTRO:-ubuntu2604}-default
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2604}-ansible:latest"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+    pre_build_image: true
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callback_result_format: yaml
+  inventory:
+    group_vars:
+      all:
+        # Helper variables
+        yourls_debug_service_enabled: false
+
+        # Variables for YOURLS
+        yourls_uid: 1000
+        yourls_gid: 1000
+        yourls_scheme: http
+        yourls_hostname: localhost
+        yourls_container_labels_traefik_enabled: false
+        yourls_container_http_host_bind_port: 8080
+        yourls_environment_variable_user: user
+        yourls_environment_variable_pass: pass
+        yourls_environment_variable_cookiekey: cookiekey
+        yourls_environment_variable_site: http://localhost:8080
+
+        # Test self-building
+        yourls_container_image_self_build: true
+
+        # Variables required for YOURLS to connect to the MariaDB database (via Unix socket)
+        yourls_database_username: my_database_username
+        yourls_database_password: my_database_password
+        yourls_database_name: yourls
+        yourls_database_socket_enabled: true
+        yourls_database_socket_path_host: "{{ mariadb_run_path }}"
+        yourls_systemd_required_services_list_auto: |
+          {{
+            (['mariadb.service'])
+          }}
+
+        # Variables for MariaDB
+        mariadb_uid: 1000
+        mariadb_gid: 1000
+        mariadb_root_password: mariadb_password
+        mariadb_container_unix_socket_enabled: true
+        mariadb_managed_databases: |
+          {{
+            [{
+              'name': yourls_database_name,
+              'username': yourls_database_username,
+              'password': yourls_database_password,
+            }]
+          }}
+  env:
+    # Workaround for https://github.com/ansible/molecule/issues/4391
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles
+scenario:
+  # See: https://docs.ansible.com/projects/molecule/configuration/?h=test_sequence#scenario
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    # Disable idempotence test for now due to ansible-role-mariadb
+    # - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
+verifier:
+  name: ansible
