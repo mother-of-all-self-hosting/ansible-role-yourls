@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
@@ -31,17 +32,26 @@ provisioner:
         # Helper variables
         yourls_debug_service_enabled: false
 
+        # As in the `default` scenario, none of the values YOURLS can be asked
+        # about are the role's defaults. The port differs from that scenario's as
+        # well, so that a stray container left behind by a parallel run cannot be
+        # mistaken for the one built here.
+        yourls_molecule_http_bind_address: 127.0.0.1
+        yourls_molecule_http_bind_port: 18082
+        yourls_molecule_base_url: "http://{{ yourls_molecule_http_bind_address }}:{{ yourls_molecule_http_bind_port }}"
+
         # Variables for YOURLS
         yourls_uid: 1000
         yourls_gid: 1000
         yourls_scheme: http
-        yourls_hostname: localhost
+        yourls_hostname: "{{ yourls_molecule_http_bind_address }}"
         yourls_container_labels_traefik_enabled: false
-        yourls_container_http_host_bind_port: 8080
-        yourls_environment_variable_user: user
-        yourls_environment_variable_pass: pass
-        yourls_environment_variable_cookiekey: cookiekey
-        yourls_environment_variable_site: http://localhost:8080
+        # Exercises the "<ip>:<port>" form of this setting, not merely the bare port.
+        yourls_container_http_host_bind_port: "{{ yourls_molecule_http_bind_address }}:{{ yourls_molecule_http_bind_port }}"
+        yourls_environment_variable_user: mash_molecule_admin
+        yourls_environment_variable_pass: mash-molecule-password-8Wq2
+        yourls_environment_variable_cookiekey: mash-molecule-cookie-key-4Zt9
+        yourls_environment_variable_site: "{{ yourls_molecule_base_url }}"
 
         # Test self-building
         yourls_container_image_self_build: true
@@ -49,7 +59,8 @@ provisioner:
         # Variables required for YOURLS to connect to the MariaDB database (via Unix socket)
         yourls_database_username: my_database_username
         yourls_database_password: my_database_password
-        yourls_database_name: yourls
+        yourls_database_name: mash_molecule_yourls
+        yourls_database_prefix: mash_molecule_
         yourls_database_socket_enabled: true
         yourls_database_socket_path_host: "{{ mariadb_run_path }}"
         yourls_systemd_required_services_list_auto: |

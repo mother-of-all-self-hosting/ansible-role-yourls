@@ -45,13 +45,34 @@ pip3 install -r ./molecule/requirements.txt
 
 Currently these testing scenarios are available:
 
+Both scenarios run YOURLS against a MariaDB installed by [ansible-role-mariadb](https://github.com/mother-of-all-self-hosting/ansible-role-mariadb) and reached over a Unix socket, and both deliberately configure a port, a database name and a table prefix that are *not* the role's defaults, so that a configuration file which never reached the container shows up as a failure rather than as a pass.
+
+Neither YOURLS nor its container image creates the database schema: a freshly deployed instance answers HTTP but has no tables, and 307-redirects every path — including `/nonexistent` — to `/admin/install.php`, which itself answers 200. Because of that, "the endpoint responds" proves nothing here. Each scenario performs the installation itself (as a Molecule `side_effect`) and then verifies against surfaces that an uninstalled instance cannot produce.
+
 ### `default`
 
-Tests a standard YOURLS installation.
+Tests a standard YOURLS installation, using the container image the role pins.
+
+The verification does not stop at "the systemd service is active" — `Restart=always` makes even a crash-looping container look active. It:
+
+- asserts the running container came from `docker.io/yourls:<yourls_version>`
+- asserts the admin area answers 200 without following redirects, which it only does once the schema exists (an uninstalled YOURLS, and one with a pending schema upgrade, both 307-redirect away instead)
+- asserts the page YOURLS renders carries the site URL the role configured and the version the role pins
+- creates a short URL over the YOURLS API using the credentials the role wrote into `env`, and checks the returned short URL was built from `yourls_environment_variable_site`
+- checks that the same API call with a wrong password is refused, so that the successful call above means something
+- follows the short URL without following redirects, and asserts it answers 301 to the exact target
+- reads the row back out of MariaDB, under the database name and table prefix this scenario configured
+- asserts the version YOURLS recorded in its own options table is the one `defaults/main.yml` pins
 
 ### `default-selfbuild`
 
-Tests a standard YOURLS installation with self-building the container image.
+Tests the same installation with `yourls_container_image_self_build` enabled.
+
+It repeats the round trip above on a different port and with a different probe keyword, and adds what is specific to self-building: that the container runs the locally built image rather than the published one, that the cloned source tree sits at the pinned revision, and that the YOURLS the running container reports matches the `yourls_version` file which upstream's build recipe ships — which is what proves the image really was built from this source tree, rather than resolved from a cache.
+
+The scenario prints, but does not assert, how the packaged YOURLS compares with `yourls_version`. Upstream publishes the release and the build recipe for it as two separate things, so Renovate bumps them as two updates that are allowed to disagree until both have landed.
+
+This scenario is not part of the regular CI matrix. It runs on branches where a `*_version:` line in `defaults/main.yml` changed, and on manual `workflow_dispatch`.
 
 ## Running
 

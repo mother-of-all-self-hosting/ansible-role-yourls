@@ -1,14 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify YOURLS systemd service
+- name: Verify YOURLS
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    # A keyword and a target that YOURLS could not have invented on its own.
+    # A fresh install seeds the `url` table with three rows of its own
+    # (`yourls`, `ozh`, `yourlsblog`), so the probe must not reuse those.
+    yourls_molecule_probe_keyword: mashprobe
+    yourls_molecule_probe_target: https://mash.example.org/molecule-probe-target
+    yourls_molecule_probe_title: MASH Molecule probe
+
   tasks:
+    # `yourls_version` is a leaf literal, so reading it back out of the role's own
+    # defaults is safe. Scenario-tuned values are never read from here - those come
+    # from this scenario's group_vars, which this file would otherwise outrank.
+    - name: Read the version the role pins
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: yourls_molecule_role_defaults
+
     - name: Wait for YOURLS service to become active (up to 180s)
       ansible.builtin.systemd:
         name: yourls.service
@@ -17,6 +35,9 @@
       retries: 36
       delay: 5
 
+    # `Restart=always` makes a crash-looping container look active, so this is a
+    # readiness gate rather than evidence of anything. Everything that follows is
+    # what actually decides whether the role works.
     - name: Assert YOURLS service is active
       ansible.builtin.assert:
         that: yourls_service.status.ActiveState == 'active'
@@ -29,25 +50,185 @@
         cmd: journalctl -xeu yourls.service
       changed_when: false
 
-    - name: Wait for YOURLS HTTP endpoint to respond (up to 10m)
-      ansible.builtin.uri:
-        url: "http://localhost:8080/admin/install.php"
-        method: GET
-        status_code: [200, 302, 307]
-        follow_redirects: none
-      register: yourls_endpoint
-      until: yourls_endpoint.status in [200, 302, 307]
-      retries: 120
-      delay: 5
+    - name: Inspect the running YOURLS container
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - yourls
+      register: yourls_container_inspect
+      changed_when: false
 
-    - name: Assert YOURLS HTTP endpoint responds
+    - name: Assert the running container came from the image the role pins
       ansible.builtin.assert:
-        that: yourls_endpoint.status in [200, 302, 307]
-        fail_msg: "YOURLS did not respond as expected ({{ yourls_endpoint.status | default('no response') }})"
-        success_msg: "YOURLS responded with {{ yourls_endpoint.status }}"
+        that: >-
+          (yourls_container_inspect.stdout | from_json)[0].Config.Image
+          == 'docker.io/yourls:' ~ yourls_molecule_role_defaults.yourls_version
+        fail_msg: >-
+          Expected image docker.io/yourls:{{ yourls_molecule_role_defaults.yourls_version }},
+          got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
+        success_msg: "The container runs docker.io/yourls:{{ yourls_molecule_role_defaults.yourls_version }}"
 
-    - name: Show YOURLS systemd service status summary
+    # A running YOURLS that has not been installed answers 200 on
+    # `/admin/install.php` and 307-redirects literally every other path there,
+    # including `/nonexistent`. Asking for the admin area without following
+    # redirects is therefore the cheapest honest "is it installed" probe: 200 only
+    # once the tables exist, 307 to the installer before that. It also catches the
+    # state a version upgrade leaves behind, since a pending schema upgrade
+    # 307-redirects everything to `/admin/upgrade.php` in the same way.
+    - name: Fetch the YOURLS admin area
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/admin/index.php"
+        method: GET
+        status_code: [200]
+        follow_redirects: none
+        return_content: true
+      register: yourls_admin_page
+
+    - name: Assert the YOURLS admin area is installed, configured and running the pinned version
+      ansible.builtin.assert:
+        that:
+          # Not the installer, and not the upgrade wizard either.
+          - "'<title>Login &mdash; YOURLS' in yourls_admin_page.content"
+          # Only `yourls_environment_variable_site` can have produced this.
+          - "yourls_molecule_base_url ~ '/admin/index.php' in yourls_admin_page.content"
+          # YOURLS prints its own version into every page it renders.
+          - >-
+            'content="YOURLS ' ~ yourls_molecule_role_defaults.yourls_version ~ '"'
+            in yourls_admin_page.content
+        fail_msg: "The YOURLS admin area is not what the role configured"
+        success_msg: "YOURLS {{ yourls_molecule_role_defaults.yourls_version }} serves a login page at {{ yourls_molecule_base_url }}"
+
+    # The API is the round trip that proves the whole stack at once: the
+    # credentials the role wrote into `env`, PHP, and the database behind it.
+    - name: Create a short URL over the YOURLS API
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/yourls-api.php"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ yourls_environment_variable_user }}"
+          password: "{{ yourls_environment_variable_pass }}"
+          action: shorturl
+          url: "{{ yourls_molecule_probe_target }}"
+          keyword: "{{ yourls_molecule_probe_keyword }}"
+          # Supplying a title keeps YOURLS from fetching the target for one.
+          title: "{{ yourls_molecule_probe_title }}"
+          format: json
+        status_code: [200]
+      register: yourls_api_shorturl
+
+    - name: Assert the YOURLS API accepted the role's credentials and shortened the URL
+      ansible.builtin.assert:
+        that:
+          - yourls_api_shorturl.json.status == 'success'
+          - yourls_api_shorturl.json.url.url == yourls_molecule_probe_target
+          # The short URL is built from `yourls_environment_variable_site`.
+          - yourls_api_shorturl.json.shorturl == yourls_molecule_base_url ~ '/' ~ yourls_molecule_probe_keyword
+        fail_msg: "The YOURLS API did not shorten the URL as expected: {{ yourls_api_shorturl.json }}"
+        success_msg: "The YOURLS API returned {{ yourls_api_shorturl.json.shorturl }}"
+
+    # Negative control for the call above: without it, an API that had stopped
+    # checking credentials would look exactly as healthy.
+    - name: Probe the YOURLS API with a wrong password
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/yourls-api.php"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ yourls_environment_variable_user }}"
+          password: "not-{{ yourls_environment_variable_pass }}"
+          action: version
+          format: json
+        status_code: [200, 403]
+      register: yourls_api_bad_password
+
+    - name: Assert the YOURLS API rejects a wrong password
+      ansible.builtin.assert:
+        that:
+          - yourls_api_bad_password.status == 403
+          - yourls_api_bad_password.json.errorCode == '403'
+        fail_msg: "The YOURLS API answered {{ yourls_api_bad_password.status }} to a wrong password"
+        success_msg: "The YOURLS API rejects a wrong password"
+
+    # Redirects are not followed, so that the short URL has to answer with the
+    # target itself rather than merely ending up somewhere that returns 200.
+    - name: Follow the short URL YOURLS handed out
+      ansible.builtin.uri:
+        url: "{{ yourls_api_shorturl.json.shorturl }}"
+        method: GET
+        status_code: [301]
+        follow_redirects: none
+      register: yourls_shorturl_redirect
+
+    - name: Assert the short URL redirects to the target
+      ansible.builtin.assert:
+        that: yourls_shorturl_redirect.location == yourls_molecule_probe_target
+        fail_msg: "The short URL redirected to {{ yourls_shorturl_redirect.location | default('nowhere') }}"
+        success_msg: "The short URL redirects to {{ yourls_molecule_probe_target }}"
+
+    # Everything above would also hold for a YOURLS talking to some other
+    # database, so the row is read back out of MariaDB itself, under the table
+    # prefix and database name this scenario configured.
+    - name: Read the short URL back out of MariaDB
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - mariadb
+          - mariadb
+          - "--user=root"
+          - "--password={{ mariadb_root_password }}"
+          - "--database={{ yourls_database_name }}"
+          - "--batch"
+          - "--skip-column-names"
+          - "--execute"
+          - >-
+            SELECT url FROM {{ yourls_database_prefix }}url
+            WHERE keyword = '{{ yourls_molecule_probe_keyword }}'
+      register: yourls_database_row
+      changed_when: false
+
+    - name: Assert MariaDB holds the short URL the API created
+      ansible.builtin.assert:
+        that: yourls_database_row.stdout | trim == yourls_molecule_probe_target
+        fail_msg: >-
+          {{ yourls_database_name }}.{{ yourls_database_prefix }}url holds
+          '{{ yourls_database_row.stdout | trim }}' for {{ yourls_molecule_probe_keyword }}
+        success_msg: "MariaDB holds the short URL in {{ yourls_database_name }}.{{ yourls_database_prefix }}url"
+
+    # The version YOURLS wrote into its own options table is the version of the
+    # code that ran, as opposed to whatever the image tag claims.
+    - name: Read the version YOURLS recorded in MariaDB
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - mariadb
+          - mariadb
+          - "--user=root"
+          - "--password={{ mariadb_root_password }}"
+          - "--database={{ yourls_database_name }}"
+          - "--batch"
+          - "--skip-column-names"
+          - "--execute"
+          - >-
+            SELECT option_value FROM {{ yourls_database_prefix }}options
+            WHERE option_name = 'version'
+      register: yourls_database_version
+      changed_when: false
+
+    - name: Assert the YOURLS that installed itself is the version the role pins
+      ansible.builtin.assert:
+        that: yourls_database_version.stdout | trim == yourls_molecule_role_defaults.yourls_version | string
+        fail_msg: >-
+          MariaDB records YOURLS '{{ yourls_database_version.stdout | trim }}',
+          while defaults/main.yml pins {{ yourls_molecule_role_defaults.yourls_version }}
+        success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
+
+    - name: Show YOURLS verification summary
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-          - "YOURLS HTTP: {{ yourls_endpoint.status }}"
+          - "YOURLS version (recorded in MariaDB): {{ yourls_database_version.stdout | trim }}"
+          - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"

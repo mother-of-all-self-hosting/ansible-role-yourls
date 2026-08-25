@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+# See `../default/side_effect.yml` for why this step exists at all: neither YOURLS
+# nor its container image installs the schema, so the scenario has to. A
+# self-built image is no different in that respect.
+- name: Install the self-built YOURLS for Molecule tests
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Wait for the self-built YOURLS to serve its installer (up to 10m)
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/admin/install.php"
+        method: GET
+        status_code: [200]
+        follow_redirects: none
+      register: yourls_installer_page
+      until: yourls_installer_page.status == 200
+      retries: 120
+      delay: 5
+
+    - name: Ensure the self-built YOURLS creates its database tables
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/admin/install.php?install=1"
+        method: GET
+        status_code: [200]
+        follow_redirects: none
+        return_content: true
+      register: yourls_install_result
+      changed_when: "'YOURLS tables successfully created.' in yourls_install_result.content"
+
+    - name: Assert the self-built YOURLS reported creating its tables under the configured prefix
+      ansible.builtin.assert:
+        that:
+          - "'YOURLS tables successfully created.' in yourls_install_result.content"
+          - "\"Table '\" ~ yourls_database_prefix ~ \"url' created.\" in yourls_install_result.content"
+        fail_msg: "The self-built YOURLS did not report creating its tables: {{ yourls_install_result.content | regex_findall('<li>([^<]*)</li>') }}"
+        success_msg: "The self-built YOURLS created its database tables under the '{{ yourls_database_prefix }}' prefix"

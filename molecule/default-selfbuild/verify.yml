@@ -1,14 +1,33 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify YOURLS systemd service
+- name: Verify the self-built YOURLS
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    # Deliberately different from the `default` scenario's probe, so that neither
+    # scenario's assertions could be satisfied by the other's leftovers.
+    yourls_molecule_probe_keyword: mashselfbuild
+    yourls_molecule_probe_target: https://mash.example.org/molecule-selfbuild-target
+    yourls_molecule_probe_title: MASH Molecule self-build probe
+    # `yourls_container_image_self_build_src_files_path` is Jinja-derived and does
+    # not resolve outside the role, so its value for this scenario is spelled out.
+    yourls_molecule_selfbuild_src_path: /yourls/docker-src
+
   tasks:
+    # Only leaf literals are read from here. `yourls_container_image_self_build_name`
+    # is Jinja-derived too, so the image name is rebuilt from the pinned revision.
+    - name: Read the self-build revision the role pins
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: yourls_molecule_role_defaults
+
     - name: Wait for YOURLS service to become active (up to 180s)
       ansible.builtin.systemd:
         name: yourls.service
@@ -17,6 +36,8 @@
       retries: 36
       delay: 5
 
+    # `Restart=always` makes a crash-looping container look active, so this is a
+    # readiness gate rather than evidence of anything.
     - name: Assert YOURLS service is active
       ansible.builtin.assert:
         that: yourls_service.status.ActiveState == 'active'
@@ -29,25 +50,228 @@
         cmd: journalctl -xeu yourls.service
       changed_when: false
 
-    - name: Wait for YOURLS HTTP endpoint to respond (up to 10m)
-      ansible.builtin.uri:
-        url: "http://localhost:8080/admin/install.php"
-        method: GET
-        status_code: [200, 302, 307]
-        follow_redirects: none
-      register: yourls_endpoint
-      until: yourls_endpoint.status in [200, 302, 307]
-      retries: 120
-      delay: 5
+    - name: Inspect the running YOURLS container
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - yourls
+      register: yourls_container_inspect
+      changed_when: false
 
-    - name: Assert YOURLS HTTP endpoint responds
+    # The whole point of this scenario: the container must be running the image
+    # built here from upstream's Dockerfile, not the one Docker Hub publishes.
+    - name: Assert the running container came from the locally built image
       ansible.builtin.assert:
-        that: yourls_endpoint.status in [200, 302, 307]
-        fail_msg: "YOURLS did not respond as expected ({{ yourls_endpoint.status | default('no response') }})"
-        success_msg: "YOURLS responded with {{ yourls_endpoint.status }}"
+        that: >-
+          (yourls_container_inspect.stdout | from_json)[0].Config.Image
+          == 'yourls/containers:' ~ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version
+        fail_msg: >-
+          Expected the self-built
+          yourls/containers:{{ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version }},
+          got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
+        success_msg: "The container runs the image built from {{ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version }}"
 
-    - name: Show YOURLS systemd service status summary
+    - name: Read the revision the self-build source tree was checked out at
+      ansible.builtin.command:
+        argv:
+          - git
+          - -C
+          - "{{ yourls_molecule_selfbuild_src_path }}"
+          - rev-parse
+          - HEAD
+      register: yourls_selfbuild_revision
+      changed_when: false
+
+    - name: Assert the self-build source tree is at the pinned revision
+      ansible.builtin.assert:
+        that: yourls_selfbuild_revision.stdout | trim == yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version
+        fail_msg: >-
+          {{ yourls_molecule_selfbuild_src_path }} is at {{ yourls_selfbuild_revision.stdout | trim }},
+          not at the pinned {{ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version }}
+        success_msg: "The self-build source tree is at the pinned revision"
+
+    # Upstream's build recipe records which YOURLS it packages in a `yourls_version`
+    # file next to the Dockerfiles. Comparing it against what the running container
+    # reports is what proves the image really was built from this source tree,
+    # rather than resolved from a cache or pulled from somewhere else.
+    - name: Read the YOURLS version the self-build source tree packages
+      ansible.builtin.slurp:
+        src: "{{ yourls_molecule_selfbuild_src_path }}/yourls_version"
+      register: yourls_selfbuild_source_version
+
+    - name: Read the YOURLS version baked into the running container
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - yourls
+          - printenv
+          - YOURLS_VERSION
+      register: yourls_selfbuild_image_version
+      changed_when: false
+
+    - name: Assert the running container packages the YOURLS its source tree declares
+      ansible.builtin.assert:
+        that: >-
+          yourls_selfbuild_image_version.stdout | trim
+          == yourls_selfbuild_source_version.content | b64decode | trim
+        fail_msg: >-
+          The container reports YOURLS {{ yourls_selfbuild_image_version.stdout | trim }},
+          while its source tree declares {{ yourls_selfbuild_source_version.content | b64decode | trim }}
+        success_msg: "The self-built image packages YOURLS {{ yourls_selfbuild_image_version.stdout | trim }}"
+
+    # A YOURLS that has not been installed 307-redirects every path to
+    # `/admin/install.php`, so a 200 here (with redirects unfollowed) is what says
+    # the schema exists. The same holds for a pending schema upgrade, which
+    # 307-redirects everything to `/admin/upgrade.php`.
+    - name: Fetch the admin area of the self-built YOURLS
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/admin/index.php"
+        method: GET
+        status_code: [200]
+        follow_redirects: none
+        return_content: true
+      register: yourls_admin_page
+
+    - name: Assert the self-built YOURLS serves a configured, installed admin area
+      ansible.builtin.assert:
+        that:
+          - "'<title>Login &mdash; YOURLS' in yourls_admin_page.content"
+          # Only `yourls_environment_variable_site` can have produced this.
+          - "yourls_molecule_base_url ~ '/admin/index.php' in yourls_admin_page.content"
+          # The version the running PHP prints must match what the image packages.
+          - >-
+            'content="YOURLS ' ~ (yourls_selfbuild_image_version.stdout | trim) ~ '"'
+            in yourls_admin_page.content
+        fail_msg: "The self-built YOURLS admin area is not what the role configured"
+        success_msg: "The self-built YOURLS serves a login page at {{ yourls_molecule_base_url }}"
+
+    - name: Create a short URL over the self-built YOURLS API
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/yourls-api.php"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ yourls_environment_variable_user }}"
+          password: "{{ yourls_environment_variable_pass }}"
+          action: shorturl
+          url: "{{ yourls_molecule_probe_target }}"
+          keyword: "{{ yourls_molecule_probe_keyword }}"
+          # Supplying a title keeps YOURLS from fetching the target for one.
+          title: "{{ yourls_molecule_probe_title }}"
+          format: json
+        status_code: [200]
+      register: yourls_api_shorturl
+
+    - name: Assert the self-built YOURLS API accepted the role's credentials and shortened the URL
+      ansible.builtin.assert:
+        that:
+          - yourls_api_shorturl.json.status == 'success'
+          - yourls_api_shorturl.json.url.url == yourls_molecule_probe_target
+          - yourls_api_shorturl.json.shorturl == yourls_molecule_base_url ~ '/' ~ yourls_molecule_probe_keyword
+        fail_msg: "The self-built YOURLS API did not shorten the URL as expected: {{ yourls_api_shorturl.json }}"
+        success_msg: "The self-built YOURLS API returned {{ yourls_api_shorturl.json.shorturl }}"
+
+    # Negative control for the call above: an API that had stopped checking
+    # credentials would otherwise look exactly as healthy.
+    - name: Probe the self-built YOURLS API with a wrong password
+      ansible.builtin.uri:
+        url: "{{ yourls_molecule_base_url }}/yourls-api.php"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ yourls_environment_variable_user }}"
+          password: "not-{{ yourls_environment_variable_pass }}"
+          action: version
+          format: json
+        status_code: [200, 403]
+      register: yourls_api_bad_password
+
+    - name: Assert the self-built YOURLS API rejects a wrong password
+      ansible.builtin.assert:
+        that:
+          - yourls_api_bad_password.status == 403
+          - yourls_api_bad_password.json.errorCode == '403'
+        fail_msg: "The self-built YOURLS API answered {{ yourls_api_bad_password.status }} to a wrong password"
+        success_msg: "The self-built YOURLS API rejects a wrong password"
+
+    - name: Follow the short URL the self-built YOURLS handed out
+      ansible.builtin.uri:
+        url: "{{ yourls_api_shorturl.json.shorturl }}"
+        method: GET
+        status_code: [301]
+        follow_redirects: none
+      register: yourls_shorturl_redirect
+
+    - name: Assert the short URL redirects to the target
+      ansible.builtin.assert:
+        that: yourls_shorturl_redirect.location == yourls_molecule_probe_target
+        fail_msg: "The short URL redirected to {{ yourls_shorturl_redirect.location | default('nowhere') }}"
+        success_msg: "The short URL redirects to {{ yourls_molecule_probe_target }}"
+
+    - name: Read the short URL back out of MariaDB
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - mariadb
+          - mariadb
+          - "--user=root"
+          - "--password={{ mariadb_root_password }}"
+          - "--database={{ yourls_database_name }}"
+          - "--batch"
+          - "--skip-column-names"
+          - "--execute"
+          - >-
+            SELECT url FROM {{ yourls_database_prefix }}url
+            WHERE keyword = '{{ yourls_molecule_probe_keyword }}'
+      register: yourls_database_row
+      changed_when: false
+
+    - name: Assert MariaDB holds the short URL the self-built YOURLS created
+      ansible.builtin.assert:
+        that: yourls_database_row.stdout | trim == yourls_molecule_probe_target
+        fail_msg: >-
+          {{ yourls_database_name }}.{{ yourls_database_prefix }}url holds
+          '{{ yourls_database_row.stdout | trim }}' for {{ yourls_molecule_probe_keyword }}
+        success_msg: "MariaDB holds the short URL in {{ yourls_database_name }}.{{ yourls_database_prefix }}url"
+
+    - name: Read the version the self-built YOURLS recorded in MariaDB
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - mariadb
+          - mariadb
+          - "--user=root"
+          - "--password={{ mariadb_root_password }}"
+          - "--database={{ yourls_database_name }}"
+          - "--batch"
+          - "--skip-column-names"
+          - "--execute"
+          - >-
+            SELECT option_value FROM {{ yourls_database_prefix }}options
+            WHERE option_name = 'version'
+      register: yourls_database_version
+      changed_when: false
+
+    - name: Assert the version recorded in MariaDB is what the self-built image packages
+      ansible.builtin.assert:
+        that: yourls_database_version.stdout | trim == yourls_selfbuild_image_version.stdout | trim
+        fail_msg: >-
+          MariaDB records YOURLS '{{ yourls_database_version.stdout | trim }}',
+          while the self-built image packages {{ yourls_selfbuild_image_version.stdout | trim }}
+        success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
+
+    # Printed rather than asserted: the pinned upstream revision and
+    # `yourls_version` are bumped by separate Renovate updates, so they are
+    # allowed to disagree for as long as it takes both to land.
+    - name: Show self-build verification summary
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-          - "YOURLS HTTP: {{ yourls_endpoint.status }}"
+          - "Self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
+          - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
+          - "YOURLS pinned in defaults/main.yml: {{ yourls_molecule_role_defaults.yourls_version }}"
+          - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
