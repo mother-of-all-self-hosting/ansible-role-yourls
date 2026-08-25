@@ -3,8 +3,8 @@ galaxy_info:
   author: Suguru Hirahara
   company: progressiv
   role_name: yourls
-  namespace: progressiv
-  description: YOURLS
+  namespace: mash
+  description: Ansible role to install YOURLS, a self-hosted URL shortener
   platforms:
     - name: Debian
       versions:
