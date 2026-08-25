@@ -158,6 +158,14 @@ First, open the page with a web browser to complete installation on the server b
 
 The help file is available at `example.com/readme.html`.
 
+### Upgrading to a newer YOURLS version
+
+Some YOURLS releases — patch releases included — raise the schema version that YOURLS expects. YOURLS 1.10.3, for example, added an index to its `url` table and moved `YOURLS_DB_VERSION` from 506 to 507.
+
+YOURLS does not apply such a change by itself. Until it is applied, YOURLS answers every request — the admin UI, the API, and the short URLs themselves — with a redirect to `example.com/admin/upgrade.php`. Open that page with a web browser and click the button to finish the upgrade; the short URLs resolve again immediately afterwards.
+
+Because of this, `yourls_version` is never bumped automatically in this repository, and a version bump is worth applying at a time when somebody can open the admin UI shortly afterwards.
+
 ## Troubleshooting
 
 ### Check the service's logs
