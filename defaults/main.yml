@@ -14,7 +14,8 @@ yourls_enabled: true
 yourls_identifier: yourls
 yourls_base_path: "/{{ yourls_identifier }}"
 
-# Note: Update "yourls_container_image_self_build_repo_version" when updating
+# Note: `yourls_container_image_self_build_repo_version` pins upstream's build recipe
+# for this release. Renovate keeps the two in step - see `.github/renovate.json`.
 # renovate: datasource=docker depName=yourls versioning=semver
 yourls_version: 1.10.4
 
@@ -40,7 +41,10 @@ yourls_container_image_registry_prefix_upstream_default: docker.io/
 yourls_container_image_self_build: false
 yourls_container_image_self_build_name: "yourls/containers:{{ yourls_container_image_self_build_repo_version }}"
 yourls_container_image_self_build_repo: "https://github.com/YOURLS/containers.git"
-yourls_container_image_self_build_repo_version: "ceaf09af9f84ab8d7a07462a9bd63fc0b3eda5d6" # For 1.10.3
+# Upstream keeps the buildable Dockerfiles on a `dist` branch which carries no tags,
+# so this is a plain commit SHA. Renovate follows that branch's tip; a trailing
+# "For <version>" comment used to be maintained by hand here and went stale.
+yourls_container_image_self_build_repo_version: "decafc1d99dabbf82d3d47a17bae6f8ce3d71007"
 yourls_container_image_self_build_repo_base: "apache"
 yourls_container_image_self_build_src_files_path: "{{ yourls_base_path }}/docker-src"
 
