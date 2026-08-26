@@ -7,7 +7,7 @@
     "`versioning=semver` on the annotation in defaults/main.yml is what keeps the Docker Hub noise out. `yourls` publishes 84 tags, of which strict semver leaves only the real x.y.z releases: the `-apache`, `-fpm` and `-fpm-alpine` flavours parse as prereleases and are skipped, while `latest`, `apache`, `fpm`, `1` and `1.10` are not versions at all. The bare, unsuffixed tag this role uses does exist for every release, so nothing real is filtered out."
   ],
   "extends": [
-    "github>mother-of-all-self-hosting/renovate-config#v1.0.0"
+    "github>mother-of-all-self-hosting/renovate-config#v1.1.0"
   ],
   "customManagers": [
     {
