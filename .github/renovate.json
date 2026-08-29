@@ -1,13 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": [
-    "Patch releases of YOURLS are NOT automerged here, because YOURLS carries schema migrations in patch releases and cannot apply them unattended. Its `YOURLS_DB_VERSION` moved 506 -> 507 between 1.10.2 and 1.10.3, a patch bump, adding `ALTER TABLE <prefix>url ADD INDEX url_idx (url(50))` (includes/functions-upgrade.php, yourls_upgrade_to_507). Of the four patch spans 1.10.0 -> 1.10.1 -> 1.10.2 -> 1.10.3 -> 1.10.4 that this role has lived through, one carried a migration.",
-    "What makes that unmergeable rather than merely risky is how YOURLS reacts to the mismatch: includes/Config/Init.php 307-redirects every single request - the admin area, the API and the short URLs themselves - to `/admin/upgrade.php`, which is a form a human has to click. A patch bump landing on its own would take a running shortener offline until somebody logs in, and no fresh-install test can see it coming: Molecule installs the new schema directly and records the new db_version, so it never crosses an upgrade at all.",
-    "The Molecule suite is still what gates the branch for the updates that do automerge. It installs YOURLS (neither the app nor the image does that on its own), asserts the admin area is past the installer rather than 307-redirecting to it, creates a short URL over the API with the credentials the role wrote into `env`, follows the short URL to its target without following redirects, reads the row back out of MariaDB under a non-default database name and table prefix, and asserts that the version YOURLS recorded in its own options table is the one defaults/main.yml pins.",
+    "Patch releases of YOURLS are automerged once CI is green by extending the shared `patch-automerge` preset. Minor and major releases still require manual review.",
+    "YOURLS has carried schema migrations in patch releases and cannot apply them unattended. Its `YOURLS_DB_VERSION` moved 506 -> 507 between 1.10.2 and 1.10.3, and a fresh-install Molecule run cannot exercise that upgrade path. Enabling patch automerge accepts that an existing installation may need a manual visit to `/admin/upgrade.php` after deployment.",
+    "The Molecule suite installs YOURLS, asserts the admin area is past the installer rather than 307-redirecting to it, verifies that the application-reported version belongs to the pinned release while allowing only a terminal `-dev` suffix, creates a short URL over the API with the credentials the role wrote into `env`, follows the short URL to its target without following redirects, and reads the URL and exact application-reported version back out of MariaDB under a non-default database name and table prefix.",
     "`versioning=semver` on the annotation in defaults/main.yml is what keeps the Docker Hub noise out. `yourls` publishes 84 tags, of which strict semver leaves only the real x.y.z releases: the `-apache`, `-fpm` and `-fpm-alpine` flavours parse as prereleases and are skipped, while `latest`, `apache`, `fpm`, `1` and `1.10` are not versions at all. The bare, unsuffixed tag this role uses does exist for every release, so nothing real is filtered out."
   ],
   "extends": [
-    "github>mother-of-all-self-hosting/renovate-config#v1.1.0"
+    "github>mother-of-all-self-hosting/renovate-config#v1.1.0",
+    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.1.0"
   ],
   "customManagers": [
     {
@@ -30,6 +31,13 @@
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["yourls", "https://github.com/YOURLS/containers"],
       "groupName": "YOURLS"
+    },
+    {
+      "description": "The self-build recipe revision is grouped with the corresponding YOURLS release. Allowing this digest update to automerge prevents it from vetoing patch automerge for the group; a grouped minor or major release remains manual because its YOURLS update is not automerge-enabled.",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["https://github.com/YOURLS/containers"],
+      "automerge": true,
+      "automergeType": "branch"
     }
   ]
 }
