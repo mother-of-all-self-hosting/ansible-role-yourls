@@ -121,6 +121,33 @@
           while its source tree declares {{ yourls_selfbuild_source_version.content | b64decode | trim }}
         success_msg: "The self-built image packages YOURLS {{ yourls_selfbuild_image_version.stdout | trim }}"
 
+    # A release can carry a `-dev` suffix in the application's own version
+    # constant even though the build recipe and image identify the final release.
+    # Normalize only that suffix and keep every rendered/stored value exact below.
+    - name: Read the version the self-built YOURLS application reports
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - yourls
+          - php
+          - -r
+          - "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
+      register: yourls_selfbuild_application_version
+      changed_when: false
+
+    - name: Assert the application version belongs to the packaged release
+      ansible.builtin.assert:
+        that: >-
+          (yourls_selfbuild_application_version.stdout | trim | regex_replace('-dev$', ''))
+          == (yourls_selfbuild_image_version.stdout | trim)
+        fail_msg: >-
+          The application reports YOURLS {{ yourls_selfbuild_application_version.stdout | trim }},
+          while the self-built image packages {{ yourls_selfbuild_image_version.stdout | trim }}
+        success_msg: >-
+          The application reports YOURLS {{ yourls_selfbuild_application_version.stdout | trim }}
+          from the packaged {{ yourls_selfbuild_image_version.stdout | trim }} release
+
     # A YOURLS that has not been installed 307-redirects every path to
     # `/admin/install.php`, so a 200 here (with redirects unfollowed) is what says
     # the schema exists. The same holds for a pending schema upgrade, which
@@ -140,9 +167,9 @@
           - "'<title>Login &mdash; YOURLS' in yourls_admin_page.content"
           # Only `yourls_environment_variable_site` can have produced this.
           - "yourls_molecule_base_url ~ '/admin/index.php' in yourls_admin_page.content"
-          # The version the running PHP prints must match what the image packages.
+          # The page must print the exact version the running PHP reports.
           - >-
-            'content="YOURLS ' ~ (yourls_selfbuild_image_version.stdout | trim) ~ '"'
+            'content="YOURLS ' ~ (yourls_selfbuild_application_version.stdout | trim) ~ '"'
             in yourls_admin_page.content
         fail_msg: "The self-built YOURLS admin area is not what the role configured"
         success_msg: "The self-built YOURLS serves a login page at {{ yourls_molecule_base_url }}"
@@ -256,12 +283,12 @@
       register: yourls_database_version
       changed_when: false
 
-    - name: Assert the version recorded in MariaDB is what the self-built image packages
+    - name: Assert MariaDB records the version the self-built application reports
       ansible.builtin.assert:
-        that: yourls_database_version.stdout | trim == yourls_selfbuild_image_version.stdout | trim
+        that: yourls_database_version.stdout | trim == yourls_selfbuild_application_version.stdout | trim
         fail_msg: >-
           MariaDB records YOURLS '{{ yourls_database_version.stdout | trim }}',
-          while the self-built image packages {{ yourls_selfbuild_image_version.stdout | trim }}
+          while the application reports {{ yourls_selfbuild_application_version.stdout | trim }}
         success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
 
     # Printed rather than asserted: the pinned upstream revision and
@@ -273,5 +300,6 @@
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
           - "Self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
           - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
+          - "YOURLS application version: {{ yourls_selfbuild_application_version.stdout | trim }}"
           - "YOURLS pinned in defaults/main.yml: {{ yourls_molecule_role_defaults.yourls_version }}"
           - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"

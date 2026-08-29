@@ -69,6 +69,33 @@
           got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
         success_msg: "The container runs docker.io/yourls:{{ yourls_molecule_role_defaults.yourls_version }}"
 
+    # A release image can package code whose self-reported version has a `-dev`
+    # suffix. Treat that suffix as release metadata, but reject every other
+    # difference between the image tag and the code it actually contains.
+    - name: Read the version the running YOURLS application reports
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - yourls
+          - php
+          - -r
+          - "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
+      register: yourls_application_version
+      changed_when: false
+
+    - name: Assert the application version belongs to the pinned release
+      ansible.builtin.assert:
+        that: >-
+          (yourls_application_version.stdout | trim | regex_replace('-dev$', ''))
+          == (yourls_molecule_role_defaults.yourls_version | string)
+        fail_msg: >-
+          The application reports YOURLS {{ yourls_application_version.stdout | trim }},
+          while the role pins {{ yourls_molecule_role_defaults.yourls_version }}
+        success_msg: >-
+          The application reports YOURLS {{ yourls_application_version.stdout | trim }}
+          from the {{ yourls_molecule_role_defaults.yourls_version }} release
+
     # A running YOURLS that has not been installed answers 200 on
     # `/admin/install.php` and 307-redirects literally every other path there,
     # including `/nonexistent`. Asking for the admin area without following
@@ -85,7 +112,7 @@
         return_content: true
       register: yourls_admin_page
 
-    - name: Assert the YOURLS admin area is installed, configured and running the pinned version
+    - name: Assert the YOURLS admin area is installed, configured and running the application version
       ansible.builtin.assert:
         that:
           # Not the installer, and not the upgrade wizard either.
@@ -94,10 +121,10 @@
           - "yourls_molecule_base_url ~ '/admin/index.php' in yourls_admin_page.content"
           # YOURLS prints its own version into every page it renders.
           - >-
-            'content="YOURLS ' ~ yourls_molecule_role_defaults.yourls_version ~ '"'
+            'content="YOURLS ' ~ (yourls_application_version.stdout | trim) ~ '"'
             in yourls_admin_page.content
         fail_msg: "The YOURLS admin area is not what the role configured"
-        success_msg: "YOURLS {{ yourls_molecule_role_defaults.yourls_version }} serves a login page at {{ yourls_molecule_base_url }}"
+        success_msg: "YOURLS {{ yourls_application_version.stdout | trim }} serves a login page at {{ yourls_molecule_base_url }}"
 
     # The API is the round trip that proves the whole stack at once: the
     # credentials the role wrote into `env`, PHP, and the database behind it.
@@ -218,17 +245,19 @@
       register: yourls_database_version
       changed_when: false
 
-    - name: Assert the YOURLS that installed itself is the version the role pins
+    - name: Assert MariaDB records the version the application reports
       ansible.builtin.assert:
-        that: yourls_database_version.stdout | trim == yourls_molecule_role_defaults.yourls_version | string
+        that: yourls_database_version.stdout | trim == yourls_application_version.stdout | trim
         fail_msg: >-
           MariaDB records YOURLS '{{ yourls_database_version.stdout | trim }}',
-          while defaults/main.yml pins {{ yourls_molecule_role_defaults.yourls_version }}
+          while the application reports {{ yourls_application_version.stdout | trim }}
         success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
 
     - name: Show YOURLS verification summary
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
+          - "YOURLS image release: {{ yourls_molecule_role_defaults.yourls_version }}"
+          - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
           - "YOURLS version (recorded in MariaDB): {{ yourls_database_version.stdout | trim }}"
           - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"

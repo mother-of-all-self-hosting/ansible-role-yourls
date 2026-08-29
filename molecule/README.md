@@ -57,18 +57,18 @@ The verification does not stop at "the systemd service is active" — `Restart=a
 
 - asserts the running container came from `docker.io/yourls:<yourls_version>`
 - asserts the admin area answers 200 without following redirects, which it only does once the schema exists (an uninstalled YOURLS, and one with a pending schema upgrade, both 307-redirect away instead)
-- asserts the page YOURLS renders carries the site URL the role configured and the version the role pins
+- asserts the application-reported version matches the version the role pins after allowing only an optional terminal `-dev` suffix, and that the page carries that exact application version and the configured site URL
 - creates a short URL over the YOURLS API using the credentials the role wrote into `env`, and checks the returned short URL was built from `yourls_environment_variable_site`
 - checks that the same API call with a wrong password is refused, so that the successful call above means something
 - follows the short URL without following redirects, and asserts it answers 301 to the exact target
 - reads the row back out of MariaDB, under the database name and table prefix this scenario configured
-- asserts the version YOURLS recorded in its own options table is the one `defaults/main.yml` pins
+- asserts the version YOURLS recorded in its own options table exactly matches the version the running application reports
 
 ### `default-selfbuild`
 
 Tests the same installation with `yourls_container_image_self_build` enabled.
 
-It repeats the round trip above on a different port and with a different probe keyword, and adds what is specific to self-building: that the container runs the locally built image rather than the published one, that the cloned source tree sits at the pinned revision, and that the YOURLS the running container reports matches the `yourls_version` file which upstream's build recipe ships — which is what proves the image really was built from this source tree, rather than resolved from a cache.
+It repeats the round trip above on a different port and with a different probe keyword, and adds what is specific to self-building: that the container runs the locally built image rather than the published one, that the cloned source tree sits at the pinned revision, and that the image's packaged version matches the `yourls_version` file which upstream's build recipe ships — which is what proves the image really was built from this source tree, rather than resolved from a cache. The application-reported version may additionally carry a terminal `-dev` suffix, but the rendered page and database must agree with that exact value.
 
 The scenario prints, but does not assert, how the packaged YOURLS compares with `yourls_version`. Upstream publishes the release and the build recipe for it as two separate things, so Renovate bumps them as two updates that are allowed to disagree until both have landed.
 
