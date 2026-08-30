@@ -44,7 +44,7 @@ yourls_container_image_self_build_repo: "https://github.com/YOURLS/containers.gi
 # Upstream keeps the buildable Dockerfiles on a `dist` branch which carries no tags,
 # so this is a plain commit SHA. Renovate follows that branch's tip; a trailing
 # "For <version>" comment used to be maintained by hand here and went stale.
-yourls_container_image_self_build_repo_version: "0e20dada42a19a11f0980d9a307f5e9662e3c89a"
+yourls_container_image_self_build_repo_version: "ec6a3112e60524364132d6d504454e02ef49f6f5"
 yourls_container_image_self_build_repo_base: "apache"
 yourls_container_image_self_build_src_files_path: "{{ yourls_base_path }}/docker-src"
 
