@@ -84,17 +84,11 @@
       register: yourls_application_version
       changed_when: false
 
-    - name: Assert the application version belongs to the pinned release
+    - name: Assert the running YOURLS is the version this role installs
       ansible.builtin.assert:
-        that: >-
-          (yourls_application_version.stdout | trim | regex_replace('-dev$', ''))
-          == (yourls_defaults.yourls_version | string)
-        fail_msg: >-
-          The application reports YOURLS {{ yourls_application_version.stdout | trim }},
-          while the role pins {{ yourls_defaults.yourls_version }}
-        success_msg: >-
-          The application reports YOURLS {{ yourls_application_version.stdout | trim }}
-          from the {{ yourls_defaults.yourls_version }} release
+        that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == (yourls_defaults.yourls_version | string)"
+        fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_defaults.yourls_version }}"
+        success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
 
     # A running YOURLS that has not been installed answers 200 on
     # `/admin/install.php` and 307-redirects literally every other path there,

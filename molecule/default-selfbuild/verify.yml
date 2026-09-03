@@ -134,20 +134,14 @@
           - php
           - -r
           - "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
-      register: yourls_selfbuild_application_version
+      register: yourls_application_version
       changed_when: false
 
-    - name: Assert the application version belongs to the packaged release
+    - name: Assert the running YOURLS is the version this role installs
       ansible.builtin.assert:
-        that: >-
-          (yourls_selfbuild_application_version.stdout | trim | regex_replace('-dev$', ''))
-          == (yourls_selfbuild_image_version.stdout | trim)
-        fail_msg: >-
-          The application reports YOURLS {{ yourls_selfbuild_application_version.stdout | trim }},
-          while the self-built image packages {{ yourls_selfbuild_image_version.stdout | trim }}
-        success_msg: >-
-          The application reports YOURLS {{ yourls_selfbuild_application_version.stdout | trim }}
-          from the packaged {{ yourls_selfbuild_image_version.stdout | trim }} release
+        that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == (yourls_selfbuild_image_version.stdout | trim)"
+        fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_selfbuild_image_version.stdout | trim }}"
+        success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
 
     # A YOURLS that has not been installed 307-redirects every path to
     # `/admin/install.php`, so a 200 here (with redirects unfollowed) is what says
