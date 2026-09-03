@@ -291,10 +291,7 @@
           while the application reports {{ yourls_selfbuild_application_version.stdout | trim }}
         success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
 
-    # Printed rather than asserted: the pinned upstream revision and
-    # `yourls_version` are bumped by separate Renovate updates, so they are
-    # allowed to disagree for as long as it takes both to land.
-    - name: Show self-build verification summary
+    - name: Show the YOURLS verification summary
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"

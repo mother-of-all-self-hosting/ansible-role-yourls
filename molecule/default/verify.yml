@@ -253,7 +253,7 @@
           while the application reports {{ yourls_application_version.stdout | trim }}
         success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
 
-    - name: Show YOURLS verification summary
+    - name: Show the YOURLS verification summary
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
