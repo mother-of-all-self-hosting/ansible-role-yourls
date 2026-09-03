@@ -21,12 +21,13 @@
     yourls_molecule_selfbuild_src_path: /yourls/docker-src
 
   tasks:
-    # Only leaf literals are read from here. `yourls_container_image_self_build_name`
-    # is Jinja-derived too, so the image name is rebuilt from the pinned revision.
-    - name: Read the self-build revision the role pins
+    # The role is not included in this playbook, so its defaults are not in
+    # scope. Reading defaults/main.yml directly ties the version assertion
+    # below.
+    - name: Load the YOURLS role defaults
       ansible.builtin.include_vars:
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: yourls_molecule_role_defaults
+        name: yourls_defaults
 
     - name: Wait for YOURLS service to become active (up to 180s)
       ansible.builtin.systemd:
@@ -65,12 +66,12 @@
       ansible.builtin.assert:
         that: >-
           (yourls_container_inspect.stdout | from_json)[0].Config.Image
-          == 'yourls/containers:' ~ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version
+          == 'yourls/containers:' ~ yourls_defaults.yourls_container_image_self_build_repo_version
         fail_msg: >-
           Expected the self-built
-          yourls/containers:{{ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version }},
+          yourls/containers:{{ yourls_defaults.yourls_container_image_self_build_repo_version }},
           got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
-        success_msg: "The container runs the image built from {{ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version }}"
+        success_msg: "The container runs the image built from {{ yourls_defaults.yourls_container_image_self_build_repo_version }}"
 
     - name: Read the revision the self-build source tree was checked out at
       ansible.builtin.command:
@@ -85,10 +86,10 @@
 
     - name: Assert the self-build source tree is at the pinned revision
       ansible.builtin.assert:
-        that: yourls_selfbuild_revision.stdout | trim == yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version
+        that: yourls_selfbuild_revision.stdout | trim == yourls_defaults.yourls_container_image_self_build_repo_version
         fail_msg: >-
           {{ yourls_molecule_selfbuild_src_path }} is at {{ yourls_selfbuild_revision.stdout | trim }},
-          not at the pinned {{ yourls_molecule_role_defaults.yourls_container_image_self_build_repo_version }}
+          not at the pinned {{ yourls_defaults.yourls_container_image_self_build_repo_version }}
         success_msg: "The self-build source tree is at the pinned revision"
 
     # Upstream's build recipe records which YOURLS it packages in a `yourls_version`
@@ -295,8 +296,8 @@
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-          - "Self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
+          - "YOURLS self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
           - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
           - "YOURLS application version: {{ yourls_selfbuild_application_version.stdout | trim }}"
-          - "YOURLS pinned in defaults/main.yml: {{ yourls_molecule_role_defaults.yourls_version }}"
+          - "YOURLS pinned in defaults/main.yml: {{ yourls_defaults.yourls_version }}"
           - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"

@@ -19,13 +19,13 @@
     yourls_molecule_probe_title: MASH Molecule probe
 
   tasks:
-    # `yourls_version` is a leaf literal, so reading it back out of the role's own
-    # defaults is safe. Scenario-tuned values are never read from here - those come
-    # from this scenario's group_vars, which this file would otherwise outrank.
-    - name: Read the version the role pins
+    # The role is not included in this playbook, so its defaults are not in
+    # scope. Reading defaults/main.yml directly ties the version assertion
+    # below.
+    - name: Load the YOURLS role defaults
       ansible.builtin.include_vars:
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: yourls_molecule_role_defaults
+        name: yourls_defaults
 
     - name: Wait for YOURLS service to become active (up to 180s)
       ansible.builtin.systemd:
@@ -63,11 +63,11 @@
       ansible.builtin.assert:
         that: >-
           (yourls_container_inspect.stdout | from_json)[0].Config.Image
-          == 'docker.io/yourls:' ~ yourls_molecule_role_defaults.yourls_version
+          == 'docker.io/yourls:' ~ yourls_defaults.yourls_version
         fail_msg: >-
-          Expected image docker.io/yourls:{{ yourls_molecule_role_defaults.yourls_version }},
+          Expected image docker.io/yourls:{{ yourls_defaults.yourls_version }},
           got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
-        success_msg: "The container runs docker.io/yourls:{{ yourls_molecule_role_defaults.yourls_version }}"
+        success_msg: "The container runs docker.io/yourls:{{ yourls_defaults.yourls_version }}"
 
     # A release image can package code whose self-reported version has a `-dev`
     # suffix. Treat that suffix as release metadata, but reject every other
@@ -88,13 +88,13 @@
       ansible.builtin.assert:
         that: >-
           (yourls_application_version.stdout | trim | regex_replace('-dev$', ''))
-          == (yourls_molecule_role_defaults.yourls_version | string)
+          == (yourls_defaults.yourls_version | string)
         fail_msg: >-
           The application reports YOURLS {{ yourls_application_version.stdout | trim }},
-          while the role pins {{ yourls_molecule_role_defaults.yourls_version }}
+          while the role pins {{ yourls_defaults.yourls_version }}
         success_msg: >-
           The application reports YOURLS {{ yourls_application_version.stdout | trim }}
-          from the {{ yourls_molecule_role_defaults.yourls_version }} release
+          from the {{ yourls_defaults.yourls_version }} release
 
     # A running YOURLS that has not been installed answers 200 on
     # `/admin/install.php` and 307-redirects literally every other path there,
@@ -257,7 +257,7 @@
       ansible.builtin.debug:
         msg:
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-          - "YOURLS image release: {{ yourls_molecule_role_defaults.yourls_version }}"
-          - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
           - "YOURLS version (recorded in MariaDB): {{ yourls_database_version.stdout | trim }}"
+          - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
+          - "YOURLS image release: {{ yourls_defaults.yourls_version }}"
           - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
