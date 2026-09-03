@@ -164,7 +164,7 @@
           - "yourls_molecule_base_url ~ '/admin/index.php' in yourls_admin_page.content"
           # The page must print the exact version the running PHP reports.
           - >-
-            'content="YOURLS ' ~ (yourls_selfbuild_application_version.stdout | trim) ~ '"'
+            'content="YOURLS ' ~ (yourls_application_version.stdout | trim) ~ '"'
             in yourls_admin_page.content
         fail_msg: "The self-built YOURLS admin area is not what the role configured"
         success_msg: "The self-built YOURLS serves a login page at {{ yourls_molecule_base_url }}"
@@ -280,10 +280,10 @@
 
     - name: Assert MariaDB records the version the self-built application reports
       ansible.builtin.assert:
-        that: yourls_database_version.stdout | trim == yourls_selfbuild_application_version.stdout | trim
+        that: yourls_database_version.stdout | trim == yourls_application_version.stdout | trim
         fail_msg: >-
           MariaDB records YOURLS '{{ yourls_database_version.stdout | trim }}',
-          while the application reports {{ yourls_selfbuild_application_version.stdout | trim }}
+          while the application reports {{ yourls_application_version.stdout | trim }}
         success_msg: "MariaDB records YOURLS {{ yourls_database_version.stdout | trim }}"
 
     - name: Show the YOURLS verification summary
@@ -292,6 +292,6 @@
           - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
           - "YOURLS self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
           - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
-          - "YOURLS application version: {{ yourls_selfbuild_application_version.stdout | trim }}"
+          - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
           - "YOURLS pinned in defaults/main.yml: {{ yourls_defaults.yourls_version }}"
           - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
