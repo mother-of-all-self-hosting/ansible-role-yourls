@@ -166,8 +166,8 @@
           - >-
             'content="YOURLS ' ~ (yourls_application_version.stdout | trim) ~ '"'
             in yourls_admin_page.content
-        fail_msg: "The self-built YOURLS admin area is not what the role configured"
-        success_msg: "The self-built YOURLS serves a login page at {{ yourls_molecule_base_url }}"
+        fail_msg: "The YOURLS admin area is not what the role configured"
+        success_msg: "YOURLS {{ yourls_application_version.stdout | trim }} serves a login page at {{ yourls_molecule_base_url }}"
 
     - name: Create a short URL over the self-built YOURLS API
       ansible.builtin.uri:
