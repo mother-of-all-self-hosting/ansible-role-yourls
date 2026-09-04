@@ -25,7 +25,7 @@
       retries: 120
       delay: 5
 
-    - name: Ensure the YOURLS database tables are created
+    - name: Ensure YOURLS database tables are created
       ansible.builtin.uri:
         url: "{{ yourls_molecule_base_url }}/admin/install.php?install=1"
         method: GET
