@@ -149,8 +149,8 @@
         fail_msg: "The YOURLS API did not shorten the URL as expected: {{ yourls_api_shorturl.json }}"
         success_msg: "The YOURLS API returned {{ yourls_api_shorturl.json.shorturl }}"
 
-    # Negative control for the call above: without it, an API that had stopped
-    # checking credentials would look exactly as healthy.
+    # Negative control for the call above: an API that had stopped checking
+    # credentials would otherwise look exactly as healthy.
     - name: Probe the YOURLS API with a wrong password
       ansible.builtin.uri:
         url: "{{ yourls_molecule_base_url }}/yourls-api.php"
