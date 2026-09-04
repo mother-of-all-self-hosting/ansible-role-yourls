@@ -91,14 +91,14 @@ yourls_database_name: YOUR_MYSQL_SERVER_DATABASE_NAME_HERE
 
 #### Configuring connection to the database server (optional)
 
-By default the role is configured to establish connection with the the database server via the Unix socket. You can mount the Unix socket by adding the following configuration to your `vars.yml` file:
+By default the role is configured to establish connection with the database server via the Unix socket. You can mount the Unix socket by adding the following configuration to your `vars.yml` file:
 
 ```yaml
-# Specify the path to the the database Unix socket path on the host (bind-mount source)
+# Specify the path to the database Unix socket path on the host (bind-mount source)
 yourls_database_socket_path_host: ""
 ```
 
-Setting it enables to connect to the the database server via Unix socket mounted in the container at `/run-mysqld/mysqld.sock`.
+Setting it enables to connect to the database server via Unix socket mounted in the container at `/run-mysqld/mysqld.sock`.
 
 If TCP connection is preferred, connection via the Unix socket can be disabled by adding the following configuration to your `vars.yml` file:
 
