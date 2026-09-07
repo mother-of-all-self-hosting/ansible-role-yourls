@@ -57,7 +57,7 @@
           - docker
           - inspect
           - yourls
-      register: yourls_container_inspect
+      register: yourls_container_raw
       changed_when: false
 
     # The whole point of this scenario: the container must be running the image
@@ -65,12 +65,12 @@
     - name: Assert the running container came from the locally built image
       ansible.builtin.assert:
         that: >-
-          (yourls_container_inspect.stdout | from_json)[0].Config.Image
+          (yourls_container_raw.stdout | from_json)[0].Config.Image
           == 'yourls/containers:' ~ yourls_defaults.yourls_container_image_self_build_repo_version
         fail_msg: >-
           Expected the self-built
           yourls/containers:{{ yourls_defaults.yourls_container_image_self_build_repo_version }},
-          got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
+          got {{ (yourls_container_raw.stdout | from_json)[0].Config.Image }}
         success_msg: "The container runs the image built from {{ yourls_defaults.yourls_container_image_self_build_repo_version }}"
 
     - name: Read the revision the self-build source tree was checked out at

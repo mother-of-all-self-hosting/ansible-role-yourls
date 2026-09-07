@@ -56,17 +56,17 @@
           - docker
           - inspect
           - yourls
-      register: yourls_container_inspect
+      register: yourls_container_raw
       changed_when: false
 
     - name: Assert the running container came from the image the role pins
       ansible.builtin.assert:
         that: >-
-          (yourls_container_inspect.stdout | from_json)[0].Config.Image
+          (yourls_container_raw.stdout | from_json)[0].Config.Image
           == 'docker.io/yourls:' ~ yourls_defaults.yourls_version
         fail_msg: >-
           Expected image docker.io/yourls:{{ yourls_defaults.yourls_version }},
-          got {{ (yourls_container_inspect.stdout | from_json)[0].Config.Image }}
+          got {{ (yourls_container_raw.stdout | from_json)[0].Config.Image }}
         success_msg: "The container runs docker.io/yourls:{{ yourls_defaults.yourls_version }}"
 
     # A release image can package code whose self-reported version has a `-dev`
