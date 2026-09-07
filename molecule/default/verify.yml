@@ -86,7 +86,7 @@
 
     - name: Assert the running YOURLS is the version this role installs
       ansible.builtin.assert:
-        that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == (yourls_defaults.yourls_version | string)"
+        that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == yourls_defaults.yourls_version | string"
         fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_defaults.yourls_version }}"
         success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
 
