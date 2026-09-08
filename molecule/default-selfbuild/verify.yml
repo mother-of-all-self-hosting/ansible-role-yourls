@@ -57,10 +57,7 @@
 
     - name: Inspect the running YOURLS container
       ansible.builtin.command:
-        argv:
-          - docker
-          - inspect
-          - yourls
+        cmd: docker container inspect yourls
       register: yourls_container_raw
       changed_when: false
 
@@ -79,12 +76,7 @@
 
     - name: Read the revision the self-build source tree was checked out at
       ansible.builtin.command:
-        argv:
-          - git
-          - -C
-          - "{{ yourls_molecule_selfbuild_src_path }}"
-          - rev-parse
-          - HEAD
+        cmd: "git -C {{ yourls_molecule_selfbuild_src_path }} rev-parse HEAD"
       register: yourls_selfbuild_revision
       changed_when: false
 
@@ -107,12 +99,7 @@
 
     - name: Read the YOURLS version baked into the running container
       ansible.builtin.command:
-        argv:
-          - docker
-          - exec
-          - yourls
-          - printenv
-          - YOURLS_VERSION
+        cmd: "docker exec yourls printenv YOURLS_VERSION"
       register: yourls_selfbuild_image_version
       changed_when: false
 
@@ -131,13 +118,9 @@
     # Normalize only that suffix and keep every rendered/stored value exact below.
     - name: Read the version the self-built YOURLS application reports
       ansible.builtin.command:
-        argv:
-          - docker
-          - exec
-          - yourls
-          - php
-          - -r
-          - "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
+        cmd: >-
+          docker exec yourls
+          php -r "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
       register: yourls_application_version
       changed_when: false
 

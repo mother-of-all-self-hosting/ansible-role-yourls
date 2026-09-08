@@ -55,10 +55,7 @@
 
     - name: Inspect the running YOURLS container
       ansible.builtin.command:
-        argv:
-          - docker
-          - inspect
-          - yourls
+        cmd: docker container inspect yourls
       register: yourls_container_raw
       changed_when: false
 
