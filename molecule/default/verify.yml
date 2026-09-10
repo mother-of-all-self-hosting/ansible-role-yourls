@@ -21,89 +21,89 @@
   tasks:
     - name: Verify that YOURLS works
       block:
-    # The role is not included in this playbook, so its defaults are not in
-    # scope. Reading defaults/main.yml directly ties the version assertion
-    # below.
-    - name: Load the role defaults
-      ansible.builtin.include_vars:
-        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: yourls_defaults
+        # The role is not included in this playbook, so its defaults are not in
+        # scope. Reading defaults/main.yml directly ties the version assertion
+        # below.
+        - name: Load the role defaults
+          ansible.builtin.include_vars:
+            file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+            name: yourls_defaults
 
-    - name: Wait for the YOURLS systemd service to become active (up to 180s)
-      ansible.builtin.systemd_service:
-        name: yourls.service
-      register: yourls_service
-      until: yourls_service.status.ActiveState == 'active'
-      retries: 36
-      delay: 5
-      # So that giving up is reported by the assertion below rather than as a
-      # wall of systemd unit properties.
-      failed_when: false
+        - name: Wait for the YOURLS systemd service to become active (up to 180s)
+          ansible.builtin.systemd_service:
+            name: yourls.service
+          register: yourls_service
+          until: yourls_service.status.ActiveState == 'active'
+          retries: 36
+          delay: 5
+          # So that giving up is reported by the assertion below rather than as a
+          # wall of systemd unit properties.
+          failed_when: false
 
-    # `Restart=always` in the systemd unit means that even a container which crashes
-    # and gets restarted reads as active here, so this is a precondition rather than
-    # a result.
-    - name: Assert the YOURLS systemd service is active
-      ansible.builtin.assert:
-        that: yourls_service.status.ActiveState == 'active'
-        fail_msg: "yourls.service is not active ({{ yourls_service.status.ActiveState }})"
-        success_msg: "yourls.service is active"
+        # `Restart=always` in the systemd unit means that even a container which crashes
+        # and gets restarted reads as active here, so this is a precondition rather than
+        # a result.
+        - name: Assert the YOURLS systemd service is active
+          ansible.builtin.assert:
+            that: yourls_service.status.ActiveState == 'active'
+            fail_msg: "yourls.service is not active ({{ yourls_service.status.ActiveState }})"
+            success_msg: "yourls.service is active"
 
-    - name: Retrieve the YOURLS systemd service log for debugging
-      when: yourls_debug_service_enabled | bool
-      ansible.builtin.command:
-        cmd: journalctl --no-pager --output=cat --unit=yourls.service
-      changed_when: false
+        - name: Retrieve the YOURLS systemd service log for debugging
+          when: yourls_debug_service_enabled | bool
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=yourls.service
+          changed_when: false
 
-    - name: Inspect the running YOURLS container
-      ansible.builtin.command:
-        cmd: docker container inspect yourls
-      register: yourls_container_raw
-      changed_when: false
+        - name: Inspect the running YOURLS container
+          ansible.builtin.command:
+            cmd: docker container inspect yourls
+          register: yourls_container_raw
+          changed_when: false
 
-    - name: Assert the running container came from the image the role pins
-      ansible.builtin.assert:
-        that: >-
-          (yourls_container_raw.stdout | from_json)[0].Config.Image
-          == 'docker.io/yourls:' ~ yourls_defaults.yourls_version
-        fail_msg: >-
-          Expected image docker.io/yourls:{{ yourls_defaults.yourls_version }},
-          got {{ (yourls_container_raw.stdout | from_json)[0].Config.Image }}
-        success_msg: "The container runs docker.io/yourls:{{ yourls_defaults.yourls_version }}"
+        - name: Assert the running container came from the image the role pins
+          ansible.builtin.assert:
+            that: >-
+              (yourls_container_raw.stdout | from_json)[0].Config.Image
+              == 'docker.io/yourls:' ~ yourls_defaults.yourls_version
+            fail_msg: >-
+              Expected image docker.io/yourls:{{ yourls_defaults.yourls_version }},
+              got {{ (yourls_container_raw.stdout | from_json)[0].Config.Image }}
+            success_msg: "The container runs docker.io/yourls:{{ yourls_defaults.yourls_version }}"
 
-    # A release image can package code whose self-reported version has a `-dev`
-    # suffix. Treat that suffix as release metadata, but reject every other
-    # difference between the image tag and the code it actually contains.
-    - name: Read the version the running YOURLS application reports
-      ansible.builtin.command:
-        argv:
-          - docker
-          - exec
-          - yourls
-          - php
-          - -r
-          - "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
-      register: yourls_application_version
-      changed_when: false
+        # A release image can package code whose self-reported version has a `-dev`
+        # suffix. Treat that suffix as release metadata, but reject every other
+        # difference between the image tag and the code it actually contains.
+        - name: Read the version the running YOURLS application reports
+          ansible.builtin.command:
+            argv:
+              - docker
+              - exec
+              - yourls
+              - php
+              - -r
+              - "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
+          register: yourls_application_version
+          changed_when: false
 
-    - name: Assert the running YOURLS is the version this role installs
-      ansible.builtin.assert:
-        that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == yourls_defaults.yourls_version | string"
-        fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_defaults.yourls_version }}"
-        success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
+        - name: Assert the running YOURLS is the version this role installs
+          ansible.builtin.assert:
+            that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == yourls_defaults.yourls_version | string"
+            fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_defaults.yourls_version }}"
+            success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
 
-    - name: Run the checks shared by all YOURLS scenarios
-      ansible.builtin.include_tasks:
-        file: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/molecule/verify_tasks.yml"
+        - name: Run the checks shared by all YOURLS scenarios
+          ansible.builtin.include_tasks:
+            file: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/molecule/verify_tasks.yml"
 
-    - name: Show the YOURLS verification summary
-      ansible.builtin.debug:
-        msg:
-          - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-          - "YOURLS version (recorded in MariaDB): {{ yourls_database_version.stdout | trim }}"
-          - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
-          - "YOURLS image release: {{ yourls_defaults.yourls_version }}"
-          - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
+        - name: Show the YOURLS verification summary
+          ansible.builtin.debug:
+            msg:
+              - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
+              - "YOURLS version (recorded in MariaDB): {{ yourls_database_version.stdout | trim }}"
+              - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
+              - "YOURLS image release: {{ yourls_defaults.yourls_version }}"
+              - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
 
       rescue:
         # Whatever went wrong, the reason is almost always in the systemd service log.

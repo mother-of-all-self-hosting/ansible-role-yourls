@@ -23,128 +23,128 @@
   tasks:
     - name: Verify that YOURLS works
       block:
-    # The role is not included in this playbook, so its defaults are not in
-    # scope. Reading defaults/main.yml directly ties the version assertion
-    # below.
-    - name: Load the role defaults
-      ansible.builtin.include_vars:
-        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: yourls_defaults
+        # The role is not included in this playbook, so its defaults are not in
+        # scope. Reading defaults/main.yml directly ties the version assertion
+        # below.
+        - name: Load the role defaults
+          ansible.builtin.include_vars:
+            file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+            name: yourls_defaults
 
-    - name: Wait for the YOURLS systemd service to become active (up to 180s)
-      ansible.builtin.systemd_service:
-        name: yourls.service
-      register: yourls_service
-      until: yourls_service.status.ActiveState == 'active'
-      retries: 36
-      delay: 5
-      # So that giving up is reported by the assertion below rather than as a
-      # wall of systemd unit properties.
-      failed_when: false
+        - name: Wait for the YOURLS systemd service to become active (up to 180s)
+          ansible.builtin.systemd_service:
+            name: yourls.service
+          register: yourls_service
+          until: yourls_service.status.ActiveState == 'active'
+          retries: 36
+          delay: 5
+          # So that giving up is reported by the assertion below rather than as a
+          # wall of systemd unit properties.
+          failed_when: false
 
-    # `Restart=always` in the systemd unit means that even a container which crashes
-    # and gets restarted reads as active here, so this is a precondition rather than
-    # a result.
-    - name: Assert the YOURLS systemd service is active
-      ansible.builtin.assert:
-        that: yourls_service.status.ActiveState == 'active'
-        fail_msg: "yourls.service is not active ({{ yourls_service.status.ActiveState }})"
-        success_msg: "yourls.service is active"
+        # `Restart=always` in the systemd unit means that even a container which crashes
+        # and gets restarted reads as active here, so this is a precondition rather than
+        # a result.
+        - name: Assert the YOURLS systemd service is active
+          ansible.builtin.assert:
+            that: yourls_service.status.ActiveState == 'active'
+            fail_msg: "yourls.service is not active ({{ yourls_service.status.ActiveState }})"
+            success_msg: "yourls.service is active"
 
-    - name: Retrieve the YOURLS systemd service log for debugging
-      when: yourls_debug_service_enabled | bool
-      ansible.builtin.command:
-        cmd: journalctl --no-pager --output=cat --unit=yourls.service
-      changed_when: false
+        - name: Retrieve the YOURLS systemd service log for debugging
+          when: yourls_debug_service_enabled | bool
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=yourls.service
+          changed_when: false
 
-    - name: Inspect the running YOURLS container
-      ansible.builtin.command:
-        cmd: docker container inspect yourls
-      register: yourls_container_raw
-      changed_when: false
+        - name: Inspect the running YOURLS container
+          ansible.builtin.command:
+            cmd: docker container inspect yourls
+          register: yourls_container_raw
+          changed_when: false
 
-    # The whole point of this scenario: the container must be running the image
-    # built here from upstream's Dockerfile, not the one Docker Hub publishes.
-    - name: Assert the running container came from the locally built image
-      ansible.builtin.assert:
-        that: >-
-          (yourls_container_raw.stdout | from_json)[0].Config.Image
-          == 'yourls/containers:' ~ yourls_defaults.yourls_container_image_self_build_repo_version
-        fail_msg: >-
-          Expected the self-built
-          yourls/containers:{{ yourls_defaults.yourls_container_image_self_build_repo_version }},
-          got {{ (yourls_container_raw.stdout | from_json)[0].Config.Image }}
-        success_msg: "The container runs the image built from {{ yourls_defaults.yourls_container_image_self_build_repo_version }}"
+        # The whole point of this scenario: the container must be running the image
+        # built here from upstream's Dockerfile, not the one Docker Hub publishes.
+        - name: Assert the running container came from the locally built image
+          ansible.builtin.assert:
+            that: >-
+              (yourls_container_raw.stdout | from_json)[0].Config.Image
+              == 'yourls/containers:' ~ yourls_defaults.yourls_container_image_self_build_repo_version
+            fail_msg: >-
+              Expected the self-built
+              yourls/containers:{{ yourls_defaults.yourls_container_image_self_build_repo_version }},
+              got {{ (yourls_container_raw.stdout | from_json)[0].Config.Image }}
+            success_msg: "The container runs the image built from {{ yourls_defaults.yourls_container_image_self_build_repo_version }}"
 
-    - name: Read the revision the self-build source tree was checked out at
-      ansible.builtin.command:
-        cmd: "git -C {{ yourls_molecule_selfbuild_src_path }} rev-parse HEAD"
-      register: yourls_selfbuild_revision
-      changed_when: false
+        - name: Read the revision the self-build source tree was checked out at
+          ansible.builtin.command:
+            cmd: "git -C {{ yourls_molecule_selfbuild_src_path }} rev-parse HEAD"
+          register: yourls_selfbuild_revision
+          changed_when: false
 
-    - name: Assert the self-build source tree is at the pinned revision
-      ansible.builtin.assert:
-        that: yourls_selfbuild_revision.stdout | trim == yourls_defaults.yourls_container_image_self_build_repo_version
-        fail_msg: >-
-          {{ yourls_molecule_selfbuild_src_path }} is at {{ yourls_selfbuild_revision.stdout | trim }},
-          not at the pinned {{ yourls_defaults.yourls_container_image_self_build_repo_version }}
-        success_msg: "The self-build source tree is at the pinned revision"
+        - name: Assert the self-build source tree is at the pinned revision
+          ansible.builtin.assert:
+            that: yourls_selfbuild_revision.stdout | trim == yourls_defaults.yourls_container_image_self_build_repo_version
+            fail_msg: >-
+              {{ yourls_molecule_selfbuild_src_path }} is at {{ yourls_selfbuild_revision.stdout | trim }},
+              not at the pinned {{ yourls_defaults.yourls_container_image_self_build_repo_version }}
+            success_msg: "The self-build source tree is at the pinned revision"
 
-    # Upstream's build recipe records which YOURLS it packages in a `yourls_version`
-    # file next to the Dockerfiles. Comparing it against what the running container
-    # reports is what proves the image really was built from this source tree,
-    # rather than resolved from a cache or pulled from somewhere else.
-    - name: Read the YOURLS version the self-build source tree packages
-      ansible.builtin.slurp:
-        src: "{{ yourls_molecule_selfbuild_src_path }}/yourls_version"
-      register: yourls_selfbuild_source_version
+        # Upstream's build recipe records which YOURLS it packages in a `yourls_version`
+        # file next to the Dockerfiles. Comparing it against what the running container
+        # reports is what proves the image really was built from this source tree,
+        # rather than resolved from a cache or pulled from somewhere else.
+        - name: Read the YOURLS version the self-build source tree packages
+          ansible.builtin.slurp:
+            src: "{{ yourls_molecule_selfbuild_src_path }}/yourls_version"
+          register: yourls_selfbuild_source_version
 
-    - name: Read the YOURLS version baked into the running container
-      ansible.builtin.command:
-        cmd: "docker exec yourls printenv YOURLS_VERSION"
-      register: yourls_selfbuild_image_version
-      changed_when: false
+        - name: Read the YOURLS version baked into the running container
+          ansible.builtin.command:
+            cmd: "docker exec yourls printenv YOURLS_VERSION"
+          register: yourls_selfbuild_image_version
+          changed_when: false
 
-    - name: Assert the running container packages the YOURLS its source tree declares
-      ansible.builtin.assert:
-        that: >-
-          yourls_selfbuild_image_version.stdout | trim
-          == yourls_selfbuild_source_version.content | b64decode | trim
-        fail_msg: >-
-          The container reports YOURLS {{ yourls_selfbuild_image_version.stdout | trim }},
-          while its source tree declares {{ yourls_selfbuild_source_version.content | b64decode | trim }}
-        success_msg: "The self-built image packages YOURLS {{ yourls_selfbuild_image_version.stdout | trim }}"
+        - name: Assert the running container packages the YOURLS its source tree declares
+          ansible.builtin.assert:
+            that: >-
+              yourls_selfbuild_image_version.stdout | trim
+              == yourls_selfbuild_source_version.content | b64decode | trim
+            fail_msg: >-
+              The container reports YOURLS {{ yourls_selfbuild_image_version.stdout | trim }},
+              while its source tree declares {{ yourls_selfbuild_source_version.content | b64decode | trim }}
+            success_msg: "The self-built image packages YOURLS {{ yourls_selfbuild_image_version.stdout | trim }}"
 
-    # A release can carry a `-dev` suffix in the application's own version
-    # constant even though the build recipe and image identify the final release.
-    # Normalize only that suffix and keep every rendered/stored value exact below.
-    - name: Read the version the self-built YOURLS application reports
-      ansible.builtin.command:
-        cmd: >-
-          docker exec yourls
-          php -r "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
-      register: yourls_application_version
-      changed_when: false
+        # A release can carry a `-dev` suffix in the application's own version
+        # constant even though the build recipe and image identify the final release.
+        # Normalize only that suffix and keep every rendered/stored value exact below.
+        - name: Read the version the self-built YOURLS application reports
+          ansible.builtin.command:
+            cmd: >-
+              docker exec yourls
+              php -r "require '/var/www/html/includes/version.php'; echo YOURLS_VERSION;"
+          register: yourls_application_version
+          changed_when: false
 
-    - name: Assert the running YOURLS is the version this role installs
-      ansible.builtin.assert:
-        that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == (yourls_selfbuild_image_version.stdout | trim)"
-        fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_selfbuild_image_version.stdout | trim }}"
-        success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
+        - name: Assert the running YOURLS is the version this role installs
+          ansible.builtin.assert:
+            that: "(yourls_application_version.stdout | trim | regex_replace('-dev$', '')) == (yourls_selfbuild_image_version.stdout | trim)"
+            fail_msg: "YOURLS reports {{ yourls_application_version.stdout | trim | default('none') }}, expected {{ yourls_selfbuild_image_version.stdout | trim }}"
+            success_msg: "YOURLS reports {{ yourls_application_version.stdout | trim }}"
 
-    - name: Run the checks shared by all YOURLS scenarios
-      ansible.builtin.include_tasks:
-        file: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/molecule/verify_tasks.yml"
+        - name: Run the checks shared by all YOURLS scenarios
+          ansible.builtin.include_tasks:
+            file: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/molecule/verify_tasks.yml"
 
-    - name: Show the YOURLS verification summary
-      ansible.builtin.debug:
-        msg:
-          - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-          - "YOURLS self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
-          - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
-          - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
-          - "YOURLS pinned in defaults/main.yml: {{ yourls_defaults.yourls_version }}"
-          - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
+        - name: Show the YOURLS verification summary
+          ansible.builtin.debug:
+            msg:
+              - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
+              - "YOURLS self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
+              - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
+              - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
+              - "YOURLS pinned in defaults/main.yml: {{ yourls_defaults.yourls_version }}"
+              - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
 
       rescue:
         # Whatever went wrong, the reason is almost always in the systemd service log.
