@@ -21,6 +21,8 @@
     yourls_molecule_selfbuild_src_path: /yourls/docker-src
 
   tasks:
+    - name: Verify that YOURLS works
+      block:
     # The role is not included in this playbook, so its defaults are not in
     # scope. Reading defaults/main.yml directly ties the version assertion
     # below.
@@ -143,3 +145,19 @@
           - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
           - "YOURLS pinned in defaults/main.yml: {{ yourls_defaults.yourls_version }}"
           - "YOURLS short URL: {{ yourls_api_shorturl.json.shorturl }} -> {{ yourls_shorturl_redirect.location }}"
+
+      rescue:
+        # Whatever went wrong, the reason is almost always in the systemd service log.
+        - name: Retrieve the YOURLS systemd service log
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=yourls.service
+          register: yourls_service_log
+          changed_when: false
+
+        - name: Show the YOURLS systemd service log
+          ansible.builtin.debug:
+            var: yourls_service_log.stdout_lines
+
+        - name: Fail because verification did not pass
+          ansible.builtin.fail:
+            msg: "YOURLS verification failed. The systemd service log is printed above."
