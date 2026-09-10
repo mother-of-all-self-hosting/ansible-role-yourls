@@ -77,16 +77,18 @@
             success_msg: "The container runs the image built from {{ yourls_defaults.yourls_container_image_self_build_repo_version }}"
 
         - name: Read the revision the self-build source tree was checked out at
-          ansible.builtin.command:
-            cmd: "git -C {{ yourls_molecule_selfbuild_src_path }} rev-parse HEAD"
+          ansible.builtin.git:
+            repo: https://github.com/YOURLS/containers.git
+            dest: "{{ yourls_molecule_selfbuild_src_path }}"
+            version: "HEAD" # noqa:latest
+            update: false
           register: yourls_selfbuild_revision
-          changed_when: false
 
         - name: Assert the self-build source tree is at the pinned revision
           ansible.builtin.assert:
-            that: yourls_selfbuild_revision.stdout | trim == yourls_defaults.yourls_container_image_self_build_repo_version
+            that: yourls_selfbuild_revision.after | trim == yourls_defaults.yourls_container_image_self_build_repo_version
             fail_msg: >-
-              {{ yourls_molecule_selfbuild_src_path }} is at {{ yourls_selfbuild_revision.stdout | trim }},
+              {{ yourls_molecule_selfbuild_src_path }} is at {{ yourls_selfbuild_revision.after | trim }},
               not at the pinned {{ yourls_defaults.yourls_container_image_self_build_repo_version }}
             success_msg: "The self-build source tree is at the pinned revision"
 
@@ -140,7 +142,7 @@
           ansible.builtin.debug:
             msg:
               - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
-              - "YOURLS self-build revision: {{ yourls_selfbuild_revision.stdout | trim }}"
+              - "YOURLS self-build revision: {{ yourls_selfbuild_revision.after | trim }}"
               - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
               - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
               - "YOURLS pinned in defaults/main.yml: {{ yourls_defaults.yourls_version }}"
