@@ -20,6 +20,10 @@
     # not resolve outside the role, so its value for this scenario is spelled out.
     yourls_molecule_selfbuild_src_path: /yourls/docker-src
 
+    yourls_verify_units:
+      - yourls.service
+      - mariadb.service
+
   tasks:
     - name: Verify that YOURLS works
       block:
@@ -31,13 +35,14 @@
             file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
             name: yourls_defaults
 
-        - name: Wait for the YOURLS systemd service to become active (up to 180s)
+        - name: Wait for the YOURLS systemd services to become active (up to 180s each)
           ansible.builtin.systemd_service:
-            name: yourls.service
-          register: yourls_service
-          until: yourls_service.status.ActiveState == 'active'
+            name: "{{ item }}"
+          register: yourls_services
+          until: yourls_services.status.ActiveState == 'active'
           retries: 36
           delay: 5
+          loop: "{{ yourls_verify_units }}"
           # So that giving up is reported by the assertion below rather than as a
           # wall of systemd unit properties.
           failed_when: false
@@ -45,17 +50,20 @@
         # `Restart=always` in the systemd unit means that even a container which crashes
         # and gets restarted reads as active here, so this is a precondition rather than
         # a result.
-        - name: Assert the YOURLS systemd service is active
+        - name: Assert the YOURLS systemd services are active
           ansible.builtin.assert:
-            that: yourls_service.status.ActiveState == 'active'
-            fail_msg: "yourls.service is not active ({{ yourls_service.status.ActiveState }})"
-            success_msg: "yourls.service is active"
+            that: yourls_services.results | map(attribute='status.ActiveState') | unique | list == ['active']
+            fail_msg: >-
+              Not every service is active:
+              {{ dict(yourls_verify_units | zip(yourls_services.results | map(attribute='status.ActiveState'))) }}
+            success_msg: "Every systemd service is active"
 
-        - name: Retrieve the YOURLS systemd service log for debugging
+        - name: Retrieve the YOURLS systemd services log for debugging
           when: yourls_debug_service_enabled | bool
           ansible.builtin.command:
-            cmd: journalctl --no-pager --output=cat --unit=yourls.service
+            cmd: "journalctl --no-pager --output=cat --unit={{ item }}"
           changed_when: false
+          loop: "{{ yourls_verify_units }}"
 
         - name: Inspect the running YOURLS container
           ansible.builtin.command:
@@ -141,7 +149,7 @@
         - name: Show the YOURLS verification summary
           ansible.builtin.debug:
             msg:
-              - "YOURLS systemd: {{ yourls_service.status.ActiveState }}"
+              - "YOURLS systemd: {% for unit, state in yourls_verify_units | zip(yourls_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "YOURLS self-build revision: {{ yourls_selfbuild_revision.after | trim }}"
               - "YOURLS packaged by the self-built image: {{ yourls_selfbuild_image_version.stdout | trim }}"
               - "YOURLS application version: {{ yourls_application_version.stdout | trim }}"
