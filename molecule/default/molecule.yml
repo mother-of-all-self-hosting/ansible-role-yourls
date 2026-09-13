@@ -31,6 +31,7 @@ provisioner:
       all:
         # Helper variables
         yourls_debug_service_enabled: false
+        yourls_restarts_check_enabled: true
 
         # Every value below that YOURLS itself can be asked about is deliberately
         # not the role's default, so that a configuration file which never made it

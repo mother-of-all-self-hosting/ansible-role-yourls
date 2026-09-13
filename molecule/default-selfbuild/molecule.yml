@@ -31,6 +31,7 @@ provisioner:
       all:
         # Helper variables
         yourls_debug_service_enabled: false
+        yourls_restarts_check_enabled: true
 
         # As in the `default` scenario, none of the values YOURLS can be asked
         # about are the role's defaults. The port differs from that scenario's as
