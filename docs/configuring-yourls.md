@@ -32,7 +32,7 @@ To run a YOURLS instance it is necessary to prepare a [MySQL](https://www.mysql.
 
 If you are looking for an Ansible role for [MariaDB](https://mariadb.org/), you can check out [this role (ansible-role-mariadb)](https://github.com/mother-of-all-self-hosting/ansible-role-mariadb) maintained by the [Mother-of-All-Self-Hosting (MASH)](https://github.com/mother-of-all-self-hosting) team.
 
-See [this section](https://yourls.org/docs#server-requirements) on the official documentation to check server requirements.
+Refer to [this section](https://yourls.org/docs#server-requirements) on the official documentation to check server requirements.
 
 ## Adjusting the playbook configuration
 
