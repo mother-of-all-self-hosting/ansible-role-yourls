@@ -25,7 +25,7 @@
         state: absent
 
     - name: Ensure YOURLS container network does not exist
-      when: yourls_container_network_deletion_enabled
+      when: yourls_container_network_deletion_enabled and yourls_container_network != 'host'
       block:
         - name: Ensure YOURLS container network does not exist via community.docker.docker_network
           when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
